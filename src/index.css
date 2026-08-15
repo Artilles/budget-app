@@ -1,0 +1,129 @@
+:root {
+  --bg: #f7f7f5;
+  --surface: #ffffff;
+  --surface-2: #f0f0ed;
+  --border: #dcdcd6;
+  --text: #1c1c1a;
+  --text-dim: #6b6b64;
+  --accent: #2f6f4e;
+  --accent-text: #ffffff;
+  --danger: #a33329;
+  --warn: #8a6100;
+
+  /* A filled warning cell: unmistakably red, with legible text on it. */
+  --negative-bg: #c62828;
+  --negative-fg: #ffffff;
+
+  /*
+   * An interpolated balance. Light enough to read as "provisional" rather than
+   * "wrong" — this is an estimate the user asked for, not an error.
+   */
+  --autofill-bg: #fbf3d0;
+
+  /*
+   * Typeable cells, lifted clear of the row wash so "I can edit this" is
+   * visible without reading the column header. Rows sit at 6% grey over the
+   * surface, so this has to be lighter than that mix rather than equal to the
+   * surface itself.
+   */
+  --cell-editable-bg: #ffffff;
+
+  --radius: 8px;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, 'Cascadia Mono', 'SF Mono', Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #16161a;
+    --surface: #1e1e23;
+    --surface-2: #26262c;
+    --border: #34343c;
+    --text: #e8e8e4;
+    --text-dim: #9a9a94;
+    --accent: #5aa87c;
+    --accent-text: #10100f;
+    --danger: #e0736a;
+    --warn: #d9a534;
+    --negative-bg: #b3382c;
+    --negative-fg: #ffffff;
+    --autofill-bg: #46391c;
+    --cell-editable-bg: #35353f;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #16161a;
+  --surface: #1e1e23;
+  --surface-2: #26262c;
+  --border: #34343c;
+  --text: #e8e8e4;
+  --text-dim: #9a9a94;
+  --accent: #5aa87c;
+  --accent-text: #10100f;
+  --danger: #e0736a;
+  --warn: #d9a534;
+  --negative-bg: #b3382c;
+  --negative-fg: #ffffff;
+  --autofill-bg: #46391c;
+  --cell-editable-bg: #35353f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  padding: 0.5rem 0.9rem;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+button:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+button.primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+  background: var(--accent);
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  background: var(--surface-2);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}

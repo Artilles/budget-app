@@ -1,0 +1,1636 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.7rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+
+.app-header h1 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.app-header .spacer {
+  flex: 1;
+}
+
+.file-menu {
+  position: relative;
+}
+
+.file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  background: transparent;
+  border-color: transparent;
+  padding: 0.3rem 0.5rem;
+}
+
+.file-chip:hover {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.file-chip .chevron {
+  font-size: 0.7em;
+}
+
+.file-menu-panel {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  z-index: 20;
+  min-width: 17rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 22%);
+  padding: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.file-menu-current {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.2rem;
+}
+
+.file-menu-current span {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.file-menu-current strong {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  word-break: break-all;
+}
+
+.file-menu-panel button {
+  text-align: left;
+  border-color: transparent;
+  background: transparent;
+  font-size: 0.88rem;
+  padding: 0.45rem 0.6rem;
+}
+
+.file-menu-panel button:hover {
+  background: var(--surface-2);
+}
+
+.file-menu-note {
+  margin: 0.2rem 0.6rem 0.4rem;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.save-state {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  min-width: 5.5rem;
+  text-align: right;
+}
+
+button.save-state.failed {
+  min-width: 0;
+  padding: 0.25rem 0.6rem;
+  color: var(--accent-text);
+  background: var(--danger);
+  border-color: var(--danger);
+  font-weight: 600;
+}
+
+button.save-state.failed:hover {
+  background: var(--danger);
+  filter: brightness(1.08);
+}
+
+.app-main {
+  flex: 1;
+  overflow: auto;
+  padding: 1.25rem;
+}
+
+/* Connection gate ---------------------------------------------------------- */
+
+.gate {
+  max-width: 33rem;
+  margin: 3rem auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+}
+
+.gate h2 {
+  margin: 0 0 0.6rem;
+  font-size: 1.15rem;
+}
+
+.gate p {
+  margin: 0 0 1rem;
+  color: var(--text-dim);
+}
+
+.gate .actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 1.4rem;
+}
+
+.gate.error {
+  border-color: var(--danger);
+}
+
+.gate.error h2 {
+  color: var(--danger);
+}
+
+.error-detail {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  padding: 0.8rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Year view ---------------------------------------------------------------- */
+
+.year-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.year-tabs {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.year-tabs .spacer {
+  flex: 1;
+  min-width: 1rem;
+}
+
+.year-tab.add {
+  font-weight: 700;
+  padding-inline: 0.7rem;
+  color: var(--text-dim);
+}
+
+.year-tab.is-locked {
+  position: relative;
+}
+
+.lock-dot {
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-left: 0.35rem;
+  border-radius: 50%;
+  background: var(--warn);
+  vertical-align: 1px;
+}
+
+.year-tab {
+  padding: 0.35rem 0.8rem;
+  font-variant-numeric: tabular-nums;
+  border-radius: var(--radius);
+}
+
+.year-tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.year-tab.active:hover {
+  background: var(--accent);
+}
+
+/*
+ * Title and totals share one line. Stacking them left the whole area under the
+ * title empty, which pushed the grid down for no reason.
+ */
+.year-head {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+}
+
+.job-title {
+  flex: 1 1 14rem;
+  min-width: 0;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 0.3rem 0.5rem;
+}
+
+.job-title:hover {
+  border-color: var(--border);
+}
+
+.job-title:focus {
+  outline: none;
+  background: var(--surface);
+  border-color: var(--accent);
+}
+
+/* Summary strip ------------------------------------------------------------ */
+
+.summary-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 1.4rem;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.summary-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  text-align: right;
+  min-width: 6rem;
+}
+
+/* The two figures that matter most: what came in, and what was left. */
+.summary-cell.emphasis {
+  padding-left: 1.4rem;
+  border-left: 1px solid var(--border);
+}
+
+.summary-cell.emphasis:first-child {
+  padding-left: 0;
+  border-left: none;
+}
+
+.summary-label {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.summary-value {
+  font-size: 0.98rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.summary-cell.emphasis .summary-value {
+  font-size: 1.1rem;
+}
+
+.summary-share {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.negative {
+  color: var(--danger);
+}
+
+/* View tabs ---------------------------------------------------------------- */
+
+.view-tabs {
+  display: flex;
+  gap: 0.2rem;
+  margin-left: 0.75rem;
+}
+
+.view-tab {
+  padding: 0.3rem 0.75rem;
+  font-size: 0.88rem;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-dim);
+}
+
+.view-tab.active {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Overview ----------------------------------------------------------------- */
+
+.overview-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.overview-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.85rem;
+  width: max-content;
+  min-width: 100%;
+}
+
+.overview-table th,
+.overview-table td {
+  padding: 0.35rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.overview-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--surface-2);
+  font-weight: 600;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+}
+
+.overview-table .col-label {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface);
+  text-align: left;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border-right: 1px solid var(--border);
+  min-width: 5rem;
+}
+
+.overview-table thead .col-label {
+  z-index: 4;
+  background: var(--surface-2);
+}
+
+.overview-table .num {
+  font-variant-numeric: tabular-nums;
+}
+
+.overview-table .dim {
+  color: var(--text-dim);
+}
+
+.overview-table .sep {
+  border-left: 1px solid var(--border);
+}
+
+.overview-table tfoot th,
+.overview-table tfoot td {
+  background: var(--surface-2);
+  font-weight: 700;
+  border-top: 2px solid var(--border);
+  border-bottom: none;
+}
+
+/* Investment entry grid ---------------------------------------------------- */
+
+.investment-grid {
+  /* Account columns share what the derived columns leave. */
+  min-width: 66rem;
+}
+
+/*
+ * Both class names are needed: this table is also a .year-grid, and that rule
+ * sets a 15.5% label column for category names. Ties on specificity are decided
+ * by source order, which is too fragile to rely on.
+ */
+/*
+ * Wide enough for the "Month" header, which is what sets the floor here: the
+ * heading needs 56px including padding, while the widest bold label ("May")
+ * needs only 45px. At 3.4rem the column was 54px and clipped the heading to
+ * "Mo…". Still the narrowest column in the table — the account columns need
+ * the room far more.
+ */
+.year-grid.investment-grid .col-label {
+  width: 3.9rem;
+}
+
+/* Month names carry the row, so they read as labels rather than data. */
+.year-grid.investment-grid tbody .col-label {
+  font-weight: 700;
+}
+
+.investment-grid .money-cell::placeholder {
+  color: var(--text-dim);
+  opacity: 0.6;
+}
+
+/*
+ * "Started" badge on an account's first recorded month.
+ *
+ * Absolutely positioned so it cannot affect column widths — the grid is already
+ * tight at 66rem, and a badge that widened its column would shove the whole
+ * table. It sits left while the figure stays right-aligned, and ignores the
+ * pointer so the cell underneath is still one click away.
+ */
+/*
+ * Every derived column is boxed, so what you can type into and what the app
+ * works out are told apart by structure and not only by shade.
+ *
+ * Left borders on each, because the table is border-collapse: separate — a
+ * left and a right border between two adjacent derived columns would draw two
+ * lines, not one. `derived-end` closes the right-hand side in the one place a
+ * derived column is followed by an editable one (From budget → One-off).
+ */
+.year-grid.investment-grid .derived {
+  border-left: 1px solid var(--border);
+}
+
+.year-grid.investment-grid .derived-end {
+  border-right: 1px solid var(--border);
+}
+
+/* Anchors the "Started" badge; the editable tint comes from .year-grid td.cell. */
+.investment-grid td.cell {
+  position: relative;
+}
+
+/*
+ * Reserve the badge's width instead of letting the two overlap. The figure is
+ * right-aligned, so a short balance would clear the badge and a long one would
+ * run straight through it — which is the case you would only find out about
+ * once a balance got big enough.
+ */
+.investment-grid td.cell.is-start .money-cell {
+  padding-left: 4.4rem;
+}
+
+/*
+ * Tint the cell the badge belongs to. Without this the badge sits at its own
+ * cell's left edge, hard against the previous column's right-aligned figure,
+ * and reads as labelling that number instead of this one.
+ */
+.investment-grid td.cell.is-start {
+  /*
+   * Mixed over the editable colour, not over transparent: a start month is
+   * still a cell you can type in, and a translucent tint would drop that cue
+   * by compositing against the row wash instead.
+   */
+  background: color-mix(in srgb, var(--accent) 12%, var(--cell-editable-bg));
+}
+
+/*
+ * An interpolated balance, written by "Fill gaps" and flagged in the file.
+ * Listed after .is-start so a cell that is somehow both reads as an estimate —
+ * the more important fact, since it says the number was not measured.
+ */
+.investment-grid td.cell.is-autofilled {
+  background: var(--autofill-bg);
+}
+
+/*
+ * Account type badge. Background and ink are set inline from the validated
+ * series palette — see accountTypeColor / readableInk — so the colour is never
+ * restated here and cannot drift from the charts.
+ */
+.account-type {
+  display: inline-block;
+  margin-top: 0.18rem;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.06rem 0.36rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  /* Headers are right-aligned; keep the badge on its own line under the name. */
+  vertical-align: middle;
+}
+
+.investment-grid thead th .account-type {
+  display: block;
+  width: fit-content;
+  margin-left: auto;
+}
+
+.type-preview {
+  flex: 0 0 auto;
+  min-width: 3.5rem;
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* Reorder handle ----------------------------------------------------------- */
+
+.drag-handle {
+  cursor: grab;
+  user-select: none;
+  color: var(--text-dim);
+  padding: 0 0.35rem;
+  line-height: 1;
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+
+.drag-handle:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.drag-handle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.editor-line.dragging {
+  opacity: 0.45;
+}
+
+/* Where the row would land. A line, not a fill, so it reads as an insertion. */
+.editor-line.drop-target {
+  box-shadow: inset 0 2px 0 0 var(--accent);
+}
+
+.line-type {
+  flex: 0 0 8rem;
+  min-width: 5rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+}
+
+.line-type:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.start-pill {
+  position: absolute;
+  left: 0.3rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 0.08rem 0.28rem;
+  border-radius: 999px;
+  color: var(--accent-text);
+  background: var(--accent);
+  opacity: 0.85;
+}
+
+.account-manager {
+  max-width: 34rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+/* Editable tables (Raises) ------------------------------------------------- */
+
+.overview-table.editable td,
+.overview-table.editable th.col-label {
+  padding: 0.15rem 0.35rem;
+}
+
+.edit-cell {
+  width: 100%;
+  min-width: 4rem;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 0.2rem 0.35rem;
+}
+
+.edit-cell:hover {
+  border-color: var(--border);
+  background: var(--bg);
+}
+
+.edit-cell:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--bg);
+}
+
+.edit-cell::placeholder {
+  color: var(--text-dim);
+}
+
+.table-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.6rem 0.7rem;
+}
+
+.rate-field {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+}
+
+.rate-input {
+  width: 3.6rem;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 0.1rem 0.25rem;
+}
+
+.rate-input:hover {
+  border-color: var(--border);
+}
+
+.rate-input:focus {
+  outline: none;
+  background: var(--bg);
+  border-color: var(--accent);
+}
+
+.rate-suffix {
+  color: var(--text-dim);
+  font-size: 0.85em;
+}
+
+.chart-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/*
+ * Two columns of charts. Collapses to one below the point where a chart's axis
+ * labels start colliding, which is well before the viewport gets narrow.
+ */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+/* Three across, for pages with an odd number of charts. */
+.chart-grid.cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 68rem) {
+  .chart-grid.cols-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 72rem) {
+  .chart-grid,
+  .chart-grid.cols-3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* A chart that needs the full width regardless — long time series. */
+.chart-grid > .span-2 {
+  grid-column: 1 / -1;
+}
+
+/* Stat tiles --------------------------------------------------------------- */
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+}
+
+.stat-label {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.section-heading {
+  margin: 0.5rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* Tools -------------------------------------------------------------------- */
+
+.tool-index {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0.75rem;
+}
+
+.tool-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+  text-align: left;
+  padding: 1rem 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.tool-card:hover {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.tool-card-name {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.tool-card-summary {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.tool-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.tool-title {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.tool-summary {
+  margin: 0.15rem 0 0;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+.tool {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 52rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+
+.tool-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.tool-section + .tool-section {
+  border-top: 1px solid var(--border);
+  padding-top: 1.25rem;
+}
+
+.tool-section-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.tool-inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1rem;
+}
+
+.tool-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.tool-field-label {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+.tool-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tool-input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.45rem 0.6rem;
+}
+
+.tool-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.tool-input-suffix {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.tool-field-hint {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+
+.tool-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.tool-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.tool-result-label {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.tool-result-value {
+  font-size: 1.15rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.tool-result.emphasis .tool-result-value {
+  font-size: 1.4rem;
+}
+
+.tool-result-value.good {
+  color: var(--accent);
+}
+
+.tool-result-value.bad {
+  color: var(--danger);
+}
+
+.tool-result-detail {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.tool-note {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+.chart.tall {
+  height: 24rem;
+}
+
+/* Charts ------------------------------------------------------------------- */
+
+.chart-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 62rem) {
+  .chart-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.chart {
+  height: 20rem;
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+}
+
+.chart-with-note {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.chart-with-note .chart {
+  /* `flex: 1` would set flex-basis to 0 and collapse the chart to nothing in a
+     column stack that has no height of its own. `auto` takes the basis from the
+     height, so the chart works both inside the year view's stretched grid row
+     and in the overview's plain column. */
+  flex: 1 1 auto;
+}
+
+.chart-note {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+/* Grid --------------------------------------------------------------------- */
+
+.grid-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+/*
+ * Fixed layout with proportional columns: the grid fits the window instead of
+ * scrolling sideways, so December and the totals stay visible at any width.
+ */
+.year-grid {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.78rem;
+  width: 100%;
+  table-layout: fixed;
+  /*
+   * The floor at which every figure still fits, measured against the widest
+   * real value ("108,572.02") at this font size. Below it the container scrolls
+   * rather than the cells clipping — a hidden number is worse than a scrollbar.
+   * Above it the grid simply fills the window.
+   */
+  min-width: 74rem;
+}
+
+.year-grid .c-month {
+  width: 5.7%;
+}
+
+.year-grid .c-total {
+  width: 8.5%;
+  /* Separates the twelve months from the figures derived off them. */
+  border-left: 1px solid var(--border);
+}
+
+.year-grid .c-share {
+  width: 6.5%;
+}
+
+.year-grid th,
+.year-grid td {
+  padding: 0;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+/* Only category names truncate, and only with an ellipsis to say so. */
+.year-grid .col-label {
+  width: 15.5%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*
+ * Share of group is the least load-bearing column, so it is the first to go
+ * when the window is narrow — dropping it keeps the months at full precision.
+ */
+@media (max-width: 78rem) {
+  .year-grid .c-share {
+    display: none;
+  }
+
+  .year-grid {
+    min-width: 70rem;
+  }
+}
+
+.year-grid thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--surface-2);
+  padding: 0.45rem 0.4rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+}
+
+.col-label {
+  text-align: left !important;
+  padding: 0.25rem 0.6rem !important;
+  border-right: 1px solid var(--border);
+}
+
+.year-grid thead .col-label {
+  background: var(--surface-2);
+}
+
+/*
+ * Group tinting. Each tbody sets --group-color to its chart colour, so a block
+ * in the grid reads as the same thing as the band in the chart above it. Rows
+ * get a faint wash; the header and subtotal carry more of it.
+ */
+.year-grid tbody,
+.year-grid tfoot {
+  --tint: var(--group-color, var(--text-dim));
+}
+
+.year-grid tbody tr > *,
+.year-grid tfoot tr > * {
+  background: color-mix(in srgb, var(--tint) 6%, var(--surface));
+}
+
+.year-grid tbody tr.row-group > * {
+  background: color-mix(in srgb, var(--tint) 30%, var(--surface));
+}
+
+.year-grid tbody tr.row-subtotal > * {
+  background: color-mix(in srgb, var(--tint) 15%, var(--surface));
+}
+
+.row-group .col-label {
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text);
+  padding: 0.4rem 0.6rem !important;
+  border-right-color: transparent;
+}
+
+.line-name {
+  margin-right: 0.4rem;
+}
+
+.flag {
+  display: inline-block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--warn);
+  border: 1px solid var(--warn);
+  border-radius: 999px;
+  padding: 0 0.4rem;
+  margin-right: 0.3rem;
+  cursor: help;
+  vertical-align: 1px;
+}
+
+.year-grid td.cell {
+  padding: 0;
+  /*
+   * Typeable cells read as typeable, in both grids. The group tint stays on
+   * the row's label, subtotal and group header, so a block is still identifiable
+   * by colour — what changes is that the twelve amounts you can actually edit no
+   * longer look like the totals derived from them.
+   */
+  background: var(--cell-editable-bg);
+}
+
+.money-cell {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  text-align: right;
+  padding: 0.25rem 0.4rem;
+  border-radius: 0;
+}
+
+.money-cell:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+
+.money-cell:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  padding: 0.25rem 0.4rem !important;
+}
+
+.num.total {
+  font-weight: 600;
+}
+
+.num.share {
+  color: var(--text-dim);
+}
+
+.year-grid tbody tr.row-subtotal .col-label,
+.year-grid tbody tr.row-subtotal .num {
+  font-weight: 600;
+}
+
+.year-grid tfoot tr.row-leftover > * {
+  font-weight: 700;
+  border-top: 2px solid var(--border);
+  border-bottom: none;
+}
+
+/*
+ * A negative figure marks the whole cell rather than just recolouring the text —
+ * at this density a red number is easy to skim past, a red cell is not.
+ */
+.year-grid tbody tr > .negative-cell,
+.year-grid tfoot tr > .negative-cell {
+  background: var(--negative-bg);
+  color: var(--negative-fg);
+  font-weight: 700;
+}
+
+.year-grid .negative-cell .money-cell {
+  color: var(--negative-fg);
+}
+
+.year-grid .negative-cell .money-cell:hover:not(:disabled) {
+  background: color-mix(in srgb, #ffffff 12%, transparent);
+}
+
+/* Locked year: read-only, and visibly so. */
+.year-grid.locked .money-cell {
+  cursor: default;
+  opacity: 0.85;
+}
+
+/*
+ * A locked year has nothing to type into, so nothing in it should look
+ * typeable. Puts the cells back on the row wash they would have had.
+ */
+.year-grid.locked td.cell {
+  background: color-mix(in srgb, var(--tint) 6%, var(--surface));
+}
+
+.year-grid.locked .money-cell:hover {
+  background: transparent;
+}
+
+button.locked {
+  background: var(--warn);
+  border-color: var(--warn);
+  color: #16161a;
+  font-weight: 600;
+}
+
+button.locked:hover {
+  background: var(--warn);
+  filter: brightness(1.08);
+}
+
+.grid-hint {
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Category editor ---------------------------------------------------------- */
+
+.category-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.editor-group {
+  --tint: var(--group-color, var(--text-dim));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.editor-group-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.5rem 0.9rem;
+  background: color-mix(in srgb, var(--tint) 30%, var(--surface));
+}
+
+.editor-group-head h3 {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.editor-group-total {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.editor-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.editor-line {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--tint) 6%, var(--surface));
+}
+
+.editor-line-total {
+  min-width: 7rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+.editor-add {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.5rem 0.9rem;
+}
+
+.line-reorder {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.icon-btn {
+  padding: 0.05rem 0.35rem;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  border-radius: 4px;
+  color: var(--text-dim);
+}
+
+.icon-btn.danger {
+  padding: 0.1rem 0.45rem;
+  font-size: 0.95rem;
+  color: var(--danger);
+  border-color: transparent;
+}
+
+.icon-btn.danger:hover:not(:disabled) {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--accent-text);
+}
+
+.line-rename {
+  flex: 1;
+  min-width: 8rem;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+}
+
+.line-rename:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.line-group {
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.2rem;
+}
+
+.flag.toggle {
+  background: transparent;
+  color: var(--text-dim);
+  border-color: var(--border);
+  opacity: 0.65;
+}
+
+.flag.toggle.active {
+  color: var(--warn);
+  border-color: var(--warn);
+  opacity: 1;
+  font-weight: 600;
+}
+
+.add-category {
+  flex: 1;
+  min-width: 8rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+}
+
+.add-category:focus {
+  outline: none;
+  border-style: solid;
+  border-color: var(--accent);
+  background: var(--bg);
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 0.75rem;
+  text-decoration: underline;
+  font-size: inherit;
+}
+
+.link-btn.danger {
+  color: var(--danger);
+}
+
+.link-btn.danger:hover {
+  background: none;
+}
+
+/* Panels and dialogs ------------------------------------------------------- */
+
+.panel-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 45%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  z-index: 10;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: min(56rem, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgb(0 0 0 / 25%);
+}
+
+.panel.narrow {
+  width: min(28rem, 100%);
+  padding-bottom: 1rem;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.panel-head .spacer {
+  flex: 1;
+}
+
+.panel-filter {
+  flex: 1;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.35rem 0.6rem;
+}
+
+.panel-note {
+  margin: 0;
+  padding: 0.75rem 1.25rem;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-scroll {
+  overflow: auto;
+  padding: 0 1.25rem 1.25rem;
+}
+
+.category-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.category-table th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-dim);
+  padding: 0.6rem 0.5rem 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.category-table td {
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.category-table .num {
+  text-align: right;
+  width: 4rem;
+}
+
+.cat-span {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  white-space: nowrap;
+  width: 7rem;
+}
+
+.cat-rename {
+  width: 100%;
+  font: inherit;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 0.25rem 0.4rem;
+}
+
+.cat-rename:hover {
+  border-color: var(--border);
+}
+
+.cat-rename:focus {
+  outline: none;
+  background: var(--bg);
+  border-color: var(--accent);
+}
+
+.category-table select {
+  font: inherit;
+  font-size: 0.8rem;
+  max-width: 14rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.2rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.75rem 1.25rem 0;
+}
+
+.field > span {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.field input,
+.field select {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.45rem 0.6rem;
+}
+
+.field.checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.field.checkbox input {
+  width: auto;
+  flex: none;
+}
+
+.field.checkbox span {
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.field-error {
+  margin: 0.3rem 0 0;
+  padding: 0 1.25rem;
+  color: var(--danger);
+  font-size: 0.82rem;
+}
+
+.panel-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 1.25rem 1.25rem 0;
+}
+
+kbd {
+  font-family: var(--mono);
+  font-size: 0.85em;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 0.05em 0.35em;
+}
