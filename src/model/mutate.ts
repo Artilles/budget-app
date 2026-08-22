@@ -7,6 +7,7 @@ import {
   type Raise,
   type VestingEvent,
   type Year,
+  MAX_BUDGET_NAME,
   emptyMonths,
   slugify,
 } from './schema';
@@ -773,6 +774,28 @@ export function removeVestingEvent(doc: BudgetDoc, id: string): BudgetDoc {
  * Merge a patch into one tool's saved inputs. Keys set to undefined are
  * removed, so a tool can clear a field without leaving a null behind.
  */
+/**
+ * Name the budget. Empty clears the name, falling back to the file name.
+ *
+ * Trimming and the length cap live here rather than in the input, so every
+ * caller gets them — the UI's maxLength stops a person typing past the limit,
+ * but says nothing about a pasted value or a future call site. Trimmed again
+ * after truncating, since cutting at the limit can leave a trailing space.
+ *
+ * Note this never touches the file itself: the name is a label stored inside
+ * the document, and renaming a budget deliberately does not rename, move, or
+ * re-create the file the user chose.
+ */
+export function setBudgetName(doc: BudgetDoc, name: string): BudgetDoc {
+  const trimmed = name.trim().slice(0, MAX_BUDGET_NAME).trim();
+  if ((doc.name ?? '') === trimmed) return doc;
+
+  const next = { ...doc };
+  if (trimmed) next.name = trimmed;
+  else delete next.name;
+  return next;
+}
+
 export function setToolState(
   doc: BudgetDoc,
   toolId: string,

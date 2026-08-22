@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type BudgetDoc, SCHEMA_VERSION, validateDoc } from './schema';
+import { type BudgetDoc, MAX_BUDGET_NAME, SCHEMA_VERSION, validateDoc } from './schema';
 import {
   addCategoryToYear,
   addRaise,
@@ -20,6 +20,7 @@ import {
   removeVestingEvent,
   renameCategory,
   setAccountBalance,
+  setBudgetName,
   setInvestmentAccountType,
   setLineGroup,
   setMonthValue,
@@ -390,6 +391,59 @@ describe('filling investment gaps', () => {
   it('leaves a document with no gaps identical', () => {
     const before = doc();
     expect(fillInvestmentGaps(before)).toBe(before);
+  });
+});
+
+describe('naming the budget', () => {
+  it('stores the name on the document', () => {
+    expect(setBudgetName(doc(), 'Household').name).toBe('Household');
+  });
+
+  it('trims surrounding whitespace', () => {
+    expect(setBudgetName(doc(), '   Household budget  ').name).toBe('Household budget');
+  });
+
+  it('caps the name at 50 characters', () => {
+    const long = 'x'.repeat(80);
+    expect(setBudgetName(doc(), long).name).toHaveLength(MAX_BUDGET_NAME);
+  });
+
+  it('does not leave a trailing space when truncating mid-gap', () => {
+    // 50 characters lands exactly on a space, which must not survive the cut.
+    const awkward = `${'x'.repeat(49)} tail`;
+    const named = setBudgetName(doc(), awkward).name!;
+    expect(named).toBe('x'.repeat(49));
+    expect(named).not.toMatch(/s$/);
+  });
+
+  it('clears the name when set to empty or whitespace', () => {
+    const named = setBudgetName(doc(), 'Household');
+    expect('name' in setBudgetName(named, '   ')).toBe(false);
+  });
+
+  it('returns the identical document when the name is unchanged', () => {
+    const named = setBudgetName(doc(), 'Household');
+    expect(setBudgetName(named, 'Household')).toBe(named);
+    expect(setBudgetName(named, '  Household  ')).toBe(named);
+  });
+
+  it('leaves an unnamed document untouched when clearing', () => {
+    const d = doc();
+    expect(setBudgetName(d, '')).toBe(d);
+  });
+
+  it('touches nothing else, so renaming cannot disturb the budget', () => {
+    const before = doc();
+    const after = setBudgetName(before, 'Household');
+    expect(after.years).toBe(before.years);
+    expect(after.categories).toBe(before.categories);
+    expect(after.investments).toBe(before.investments);
+    expect(() => validateDoc(after)).not.toThrow();
+  });
+
+  it('renames a document with a locked year, since the name is not year data', () => {
+    const d = setYearLocked(doc(), '2025', true);
+    expect(setBudgetName(d, 'Household').name).toBe('Household');
   });
 });
 

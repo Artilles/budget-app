@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   type BudgetDoc,
+  MAX_BUDGET_NAME,
   SCHEMA_VERSION,
   ValidationError,
   createEmptyDoc,
@@ -222,5 +223,47 @@ describe('slugify', () => {
     );
     expect(slugify('Coquitlam Water+Sewage')).toBe('coquitlam-water-sewage');
     expect(slugify('!!!')).toBe('category');
+  });
+});
+
+describe('budget name', () => {
+  it('accepts a document with no name, so files written before it stay valid', () => {
+    const d = sampleDoc();
+    delete d.name;
+    expect(() => validateDoc(d)).not.toThrow();
+  });
+
+  it('accepts a name at the limit', () => {
+    expect(() => validateDoc({ ...sampleDoc(), name: 'x'.repeat(MAX_BUDGET_NAME) })).not.toThrow();
+  });
+
+  it('rejects a hand-edited name past the limit', () => {
+    expect(() => validateDoc({ ...sampleDoc(), name: 'x'.repeat(MAX_BUDGET_NAME + 1) })).toThrow(
+      /maximum is 50/,
+    );
+  });
+
+  it('rejects a non-string name', () => {
+    expect(() => validateDoc({ ...sampleDoc(), name: 42 })).toThrow(/must be a string/);
+  });
+
+  it('serialises the name near the top, not buried below the years', () => {
+    const json = serializeDoc({ ...sampleDoc(), name: 'Household' });
+    expect(json.indexOf('"schemaVersion"')).toBeLessThan(json.indexOf('"name"'));
+    expect(json.indexOf('"name"')).toBeLessThan(json.indexOf('"categories"'));
+  });
+
+  it('omits the key entirely when there is no name', () => {
+    const d = sampleDoc();
+    delete d.name;
+    // Categories and accounts have their own "name" keys, so check the
+    // top-level property rather than the text.
+    expect(JSON.parse(serializeDoc(d))).not.toHaveProperty('name');
+  });
+
+  it('round-trips through serialise and validate', () => {
+    const parsed = JSON.parse(serializeDoc({ ...sampleDoc(), name: 'Household' }));
+    expect(() => validateDoc(parsed)).not.toThrow();
+    expect(parsed.name).toBe('Household');
   });
 });

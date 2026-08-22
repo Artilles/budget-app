@@ -91,6 +91,9 @@ interface BudgetState {
   selectedTool: string | null;
   selectTool: (toolId: string | null) => void;
   setToolState: (toolId: string, patch: Record<string, unknown>) => void;
+
+  /** Rename the budget. Never renames the file it is stored in. */
+  setBudgetName: (name: string) => void;
 }
 
 export type AppView = 'year' | 'overview' | 'raises' | 'investments' | 'tools';
@@ -372,6 +375,11 @@ export const useBudget = create<BudgetState>((set, get) => ({
   setToolState(toolId, patch) {
     const { doc, setDoc } = get();
     if (doc) setDoc(mutate.setToolState(doc, toolId, patch));
+  },
+
+  setBudgetName(name) {
+    const { doc, setDoc } = get();
+    if (doc) setDoc(mutate.setBudgetName(doc, name));
   },
 }));
 

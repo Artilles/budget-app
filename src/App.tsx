@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import './App.css';
 import { useBudget } from './store/useBudget';
+import { MAX_BUDGET_NAME } from './model/schema';
 import { YearView } from './views/YearView';
 import { OverviewView } from './views/OverviewView';
 import { RaisesView } from './views/RaisesView';
@@ -65,19 +66,37 @@ export default function App() {
  */
 function FileMenu() {
   const fileName = useBudget((s) => s.fileName);
+  const budgetName = useBudget((s) => s.doc?.name ?? '');
+  const setBudgetName = useBudget((s) => s.setBudgetName);
   const openExisting = useBudget((s) => s.openExisting);
   const createNew = useBudget((s) => s.createNew);
 
   const [open, setOpen] = useState(false);
+  // Renaming is a deliberate act rather than something you fall into by opening
+  // the menu, so the name is read-only until the pencil is clicked.
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
   const ref = useRef<HTMLDivElement>(null);
+
+  // Closing abandons a half-typed name, so it cannot reappear later looking
+  // like it was saved. Declared above the effect that calls it.
+  const close = () => {
+    setOpen(false);
+    setEditing(false);
+  };
 
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) close();
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      // Escape abandons the rename first, and only closes the menu when there
+      // is no edit in progress.
+      if (e.key === 'Escape') {
+        if (editing) setEditing(false);
+        else close();
+      }
     };
     document.addEventListener('mousedown', onDown);
     document.addEventListener('keydown', onKey);
@@ -85,12 +104,25 @@ function FileMenu() {
       document.removeEventListener('mousedown', onDown);
       document.removeEventListener('keydown', onKey);
     };
-  }, [open]);
+  }, [open, editing]);
 
   const run = (action: () => Promise<void>) => {
-    setOpen(false);
+    close();
     void action();
   };
+
+  const startEditing = () => {
+    setDraft(budgetName);
+    setEditing(true);
+  };
+
+  const commitName = (value: string) => {
+    setEditing(false);
+    setBudgetName(value);
+  };
+
+  // An unnamed budget falls back to its file name, so the chip is never blank.
+  const label = budgetName || fileName || 'No file';
 
   return (
     <div className="file-menu" ref={ref}>
@@ -98,10 +130,10 @@ function FileMenu() {
         className="file-chip"
         aria-haspopup="menu"
         aria-expanded={open}
-        title="Change which budget file is open"
-        onClick={() => setOpen((v) => !v)}
+        title={budgetName ? `${budgetName} — ${fileName ?? 'no file'}` : 'Name this budget, or open another'}
+        onClick={() => (open ? close() : setOpen(true))}
       >
-        {fileName ?? 'No file'}
+        {label}
         <span className="chevron" aria-hidden="true">
           ▾
         </span>
@@ -109,10 +141,47 @@ function FileMenu() {
 
       {open && (
         <div className="file-menu-panel" role="menu">
-          <div className="file-menu-current">
-            <span>Currently open</span>
-            <strong>{fileName ?? '—'}</strong>
+          <div className="file-menu-name">
+            {editing ? (
+              <input
+                autoFocus
+                value={draft}
+                maxLength={MAX_BUDGET_NAME}
+                placeholder={fileName ?? 'Name this budget'}
+                aria-label="Budget name"
+                onChange={(e) => setDraft(e.target.value)}
+                onBlur={(e) => commitName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    commitName(e.currentTarget.value);
+                    e.currentTarget.blur();
+                  }
+                  // Also handled here so cancelling an edit does not close the
+                  // menu behind it.
+                  if (e.key === 'Escape') {
+                    e.stopPropagation();
+                    setEditing(false);
+                  }
+                }}
+              />
+            ) : (
+              <>
+                <strong>{budgetName || fileName || 'Unnamed budget'}</strong>
+                <button
+                  className="icon-btn"
+                  title="Rename this budget"
+                  aria-label="Rename this budget"
+                  onClick={startEditing}
+                >
+                  ✎
+                </button>
+              </>
+            )}
           </div>
+
+          <p className="file-menu-stored" title={fileName ?? undefined}>
+            Stored in {fileName ?? '—'}
+          </p>
           <button role="menuitem" onClick={() => run(openExisting)}>
             Open a different budget…
           </button>
@@ -120,7 +189,8 @@ function FileMenu() {
             Create a new budget…
           </button>
           <p className="file-menu-note">
-            Unsaved changes are written to the current file before switching.
+            Renaming the budget does not rename the file. Unsaved changes are written to the
+            current file before switching.
           </p>
         </div>
       )}

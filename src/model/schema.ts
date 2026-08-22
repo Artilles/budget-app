@@ -22,6 +22,12 @@
  */
 export const SCHEMA_VERSION = 2;
 
+/**
+ * Longest budget name accepted. The name is a label for a person's own file,
+ * not a key, so this exists only to keep it renderable in the header chip.
+ */
+export const MAX_BUDGET_NAME = 50;
+
 export const MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
@@ -171,6 +177,16 @@ export interface Investments {
 
 export interface BudgetDoc {
   schemaVersion: number;
+  /**
+   * What the user calls this budget, shown in the header instead of the file
+   * name. Optional: an unnamed budget falls back to its file name, so a file
+   * written before this existed stays valid and needs no migration.
+   *
+   * Purely a label. Renaming never touches the file on disk — the two are
+   * deliberately independent, so a budget can be renamed freely without the app
+   * moving or rewriting anything the user chose the location of.
+   */
+  name?: string;
   categories: Record<CategoryId, Category>;
   /** Keyed by year as a string, e.g. "2016". */
   years: Record<string, Year>;
@@ -230,7 +246,17 @@ export function serializeDoc(doc: BudgetDoc): string {
     years[key] = ordered;
   }
 
-  return JSON.stringify({ ...doc, years }, null, 2);
+  // Destructured rather than listing the keys before a spread of the whole
+  // document: naming a key on both sides is a type error, and this keeps the
+  // name near the top of the file instead of wherever a spread happened to put
+  // it. `years` comes after the spread, so the sorted copy wins.
+  const { schemaVersion, name, ...rest } = doc;
+  const ordered =
+    name === undefined
+      ? { schemaVersion, ...rest, years }
+      : { schemaVersion, name, ...rest, years };
+
+  return JSON.stringify(ordered, null, 2);
 }
 
 /** Month key for a year and zero-based month index: (2025, 0) -> "2025-01". */
@@ -267,6 +293,16 @@ export function validateDoc(value: unknown): asserts value is BudgetDoc {
   const doc = value as Record<string, unknown>;
 
   if (typeof doc.schemaVersion !== 'number') fail('Missing schemaVersion.');
+
+  if (doc.name !== undefined) {
+    if (typeof doc.name !== 'string') fail('"name" must be a string.');
+    if ((doc.name as string).length > MAX_BUDGET_NAME) {
+      fail(
+        `"name" is ${(doc.name as string).length} characters; the maximum is ` +
+          `${MAX_BUDGET_NAME}.`,
+      );
+    }
+  }
   for (const key of ['categories', 'years', 'investments'] as const) {
     if (typeof doc[key] !== 'object' || doc[key] === null) fail(`Missing or invalid "${key}".`);
   }
