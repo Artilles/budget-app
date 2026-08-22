@@ -56,6 +56,8 @@ interface BudgetState {
   removeCategory: (categoryId: string) => void;
   renameCategory: (categoryId: string, name: string) => void;
   moveLine: (categoryId: string, direction: -1 | 1) => void;
+  /** Move a line to a position within its group, for drag reordering. */
+  moveLineToIndex: (categoryId: string, toIndex: number) => void;
   setLineGroup: (categoryId: string, group: Group) => void;
   setLineFlag: (categoryId: string, flag: 'informational' | 'preIncome', value: boolean) => void;
   mergeCategories: (fromId: string, intoId: string) => void;
@@ -267,6 +269,10 @@ export const useBudget = create<BudgetState>((set, get) => ({
 
   moveLine(categoryId, direction) {
     inYear((doc, key) => mutate.moveLine(doc, key, categoryId, direction));
+  },
+
+  moveLineToIndex(categoryId, toIndex) {
+    inYear((doc, key) => mutate.moveLineToIndex(doc, key, categoryId, toIndex));
   },
 
   setLineGroup(categoryId, group) {

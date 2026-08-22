@@ -22,8 +22,23 @@ export function CategoryEditor({ doc, year }: { doc: BudgetDoc; year: Year }) {
 }
 
 function GroupBlock({ group, doc, year }: { group: Group; doc: BudgetDoc; year: Year }) {
+  const moveLineToIndex = useBudget((s) => s.moveLineToIndex);
   const lines = linesIn(year, group);
   const total = groupTotal(year, group);
+
+  // Held per group, which is what confines a drag to its own group: a row
+  // dropped on another group's list finds no drag in progress there, so
+  // nothing happens rather than silently moving between groups.
+  const [dragging, setDragging] = useState<number | null>(null);
+  const [over, setOver] = useState<number | null>(null);
+
+  const endDrag = () => {
+    if (dragging !== null && over !== null && over !== dragging) {
+      moveLineToIndex(lines[dragging].categoryId, over);
+    }
+    setDragging(null);
+    setOver(null);
+  };
 
   return (
     <section
@@ -42,8 +57,13 @@ function GroupBlock({ group, doc, year }: { group: Group; doc: BudgetDoc; year: 
             line={line}
             doc={doc}
             year={year}
-            isFirst={i === 0}
-            isLast={i === lines.length - 1}
+            index={i}
+            dragging={dragging}
+            over={over}
+            onDragStart={() => setDragging(i)}
+            onDragOver={() => setOver((prev) => (prev === i ? prev : i))}
+            onDragEnd={endDrag}
+            onMoveTo={(to) => moveLineToIndex(line.categoryId, to)}
           />
         ))}
       </ul>
@@ -57,18 +77,27 @@ function EditorRow({
   line,
   doc,
   year,
-  isFirst,
-  isLast,
+  index,
+  dragging,
+  over,
+  onDragStart,
+  onDragOver,
+  onDragEnd,
+  onMoveTo,
 }: {
   line: Line;
   doc: BudgetDoc;
   year: Year;
-  isFirst: boolean;
-  isLast: boolean;
+  index: number;
+  dragging: number | null;
+  over: number | null;
+  onDragStart: () => void;
+  onDragOver: () => void;
+  onDragEnd: () => void;
+  onMoveTo: (toIndex: number) => void;
 }) {
   const removeCategory = useBudget((s) => s.removeCategory);
   const renameCategory = useBudget((s) => s.renameCategory);
-  const moveLine = useBudget((s) => s.moveLine);
   const setLineGroup = useBudget((s) => s.setLineGroup);
   const setLineFlag = useBudget((s) => s.setLineFlag);
 
@@ -88,24 +117,45 @@ function EditorRow({
   };
 
   return (
-    <li className="editor-line">
-      <span className="line-reorder">
-        <button
-          className="icon-btn"
-          disabled={isFirst}
-          title="Move up"
-          onClick={() => moveLine(line.categoryId, -1)}
-        >
-          ↑
-        </button>
-        <button
-          className="icon-btn"
-          disabled={isLast}
-          title="Move down"
-          onClick={() => moveLine(line.categoryId, 1)}
-        >
-          ↓
-        </button>
+    <li
+      className={
+        'editor-line' +
+        (dragging === index ? ' dragging' : '') +
+        (over === index && dragging !== null && dragging !== index ? ' drop-target' : '')
+      }
+      onDragOver={(e) => {
+        // Without this the drop is refused and the row never highlights.
+        e.preventDefault();
+        onDragOver();
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        onDragEnd();
+      }}
+    >
+      <span
+        className="drag-handle"
+        draggable
+        role="button"
+        tabIndex={0}
+        aria-label={`Reorder ${name}. Use the arrow keys, or drag.`}
+        title="Drag to reorder — or focus and use ↑ / ↓"
+        onDragStart={(e) => {
+          onDragStart();
+          e.dataTransfer.effectAllowed = 'move';
+          // Firefox ignores a drag that carries no data.
+          e.dataTransfer.setData('text/plain', line.categoryId);
+        }}
+        onDragEnd={onDragEnd}
+        onKeyDown={(e) => {
+          // Dragging is mouse-only; the arrows keep reordering reachable.
+          if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            onMoveTo(index + (e.key === 'ArrowUp' ? -1 : 1));
+          }
+        }}
+      >
+        ⠿
       </span>
 
       <input

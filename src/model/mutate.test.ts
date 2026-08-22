@@ -14,6 +14,7 @@ import {
   mergeOverlap,
   moveInvestmentAccount,
   moveLine,
+  moveLineToIndex,
   removeCategoryFromYear,
   removeInvestmentAccount,
   removeRaise,
@@ -691,6 +692,93 @@ describe('reordering and regrouping', () => {
   it('will not move past the end of a group', () => {
     const d = addCategoryToYear(doc(), '2025', 'Gym', 'costOfLiving');
     expect(moveLine(d, '2025', 'gym', -1)).toBe(d);
+  });
+
+  describe('moving a line to a position, for dragging', () => {
+    /** Cost of Living holds rent, then gym, then hydro. */
+    function threeLines(): BudgetDoc {
+      let d = addCategoryToYear(doc(), '2016', 'Gym', 'costOfLiving');
+      d = addCategoryToYear(d, '2016', 'Hydro', 'costOfLiving');
+      return d;
+    }
+
+    const order = (d: BudgetDoc) =>
+      linesIn(d.years['2016'], 'costOfLiving').map((l) => l.categoryId);
+
+    it('starts from the expected order', () => {
+      expect(order(threeLines())).toEqual(['rent', 'gym', 'hydro']);
+    });
+
+    it('moves a line down to a position', () => {
+      expect(order(moveLineToIndex(threeLines(), '2016', 'rent', 2))).toEqual([
+        'gym',
+        'hydro',
+        'rent',
+      ]);
+    });
+
+    it('moves a line up to a position', () => {
+      expect(order(moveLineToIndex(threeLines(), '2016', 'hydro', 0))).toEqual([
+        'hydro',
+        'rent',
+        'gym',
+      ]);
+    });
+
+    it('clamps an index past either end rather than losing the line', () => {
+      expect(order(moveLineToIndex(threeLines(), '2016', 'rent', 99))).toEqual([
+        'gym',
+        'hydro',
+        'rent',
+      ]);
+      expect(order(moveLineToIndex(threeLines(), '2016', 'hydro', -5))).toEqual([
+        'hydro',
+        'rent',
+        'gym',
+      ]);
+    });
+
+    it('returns the identical document when nothing would move', () => {
+      const d = threeLines();
+      expect(moveLineToIndex(d, '2016', 'rent', 0)).toBe(d);
+      expect(moveLineToIndex(d, '2016', 'nope', 1)).toBe(d);
+    });
+
+    it('leaves other groups untouched, including their order values', () => {
+      const before = threeLines();
+      const after = moveLineToIndex(before, '2016', 'hydro', 0);
+
+      const incomeBefore = before.years['2016'].lines.filter((l) => l.group === 'income');
+      const incomeAfter = after.years['2016'].lines.filter((l) => l.group === 'income');
+      expect(incomeAfter.map((l) => [l.categoryId, l.order])).toEqual(
+        incomeBefore.map((l) => [l.categoryId, l.order]),
+      );
+    });
+
+    it('leaves other years untouched by reference', () => {
+      const before = threeLines();
+      const after = moveLineToIndex(before, '2016', 'hydro', 0);
+      expect(after.years['2025']).toBe(before.years['2025']);
+    });
+
+    it('reuses the group’s existing order values rather than renumbering', () => {
+      const before = threeLines();
+      const after = moveLineToIndex(before, '2016', 'hydro', 0);
+      const slots = (d: BudgetDoc) =>
+        linesIn(d.years['2016'], 'costOfLiving')
+          .map((l) => l.order)
+          .sort((a, b) => a - b);
+      expect(slots(after)).toEqual(slots(before));
+    });
+
+    it('is refused on a locked year, like every other content mutation', () => {
+      const d = setYearLocked(threeLines(), '2016', true);
+      expect(moveLineToIndex(d, '2016', 'hydro', 0)).toBe(d);
+    });
+
+    it('produces a document that validates', () => {
+      expect(() => validateDoc(moveLineToIndex(threeLines(), '2016', 'hydro', 0))).not.toThrow();
+    });
   });
 
   it('regroups in one year without touching another', () => {

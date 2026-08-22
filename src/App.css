@@ -1385,12 +1385,6 @@ button.locked:hover {
   padding: 0.5rem 0.9rem;
 }
 
-.line-reorder {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
 .icon-btn {
   padding: 0.05rem 0.35rem;
   font-size: 0.75rem;

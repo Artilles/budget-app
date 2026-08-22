@@ -212,6 +212,52 @@ export function moveLine(
   });
 }
 
+/**
+ * Move a line to a position within its own group.
+ *
+ * The counterpart to `moveLine` for dragging, which lands on a position rather
+ * than stepping one place at a time. Groups are reordered independently: the
+ * moved line's siblings keep the same set of `order` values and simply have
+ * them redealt, so lines in other groups are untouched and their numbering
+ * cannot drift.
+ */
+export function moveLineToIndex(
+  doc: BudgetDoc,
+  yearKey: string,
+  categoryId: string,
+  toIndex: number,
+): BudgetDoc {
+  return updateYear(doc, yearKey, (year) => {
+    const line = year.lines.find((l) => l.categoryId === categoryId);
+    if (!line) return year;
+
+    const siblings = year.lines
+      .filter((l) => l.group === line.group)
+      .sort((a, b) => a.order - b.order);
+
+    const from = siblings.indexOf(line);
+    const to = Math.max(0, Math.min(siblings.length - 1, toIndex));
+    if (to === from) return year;
+
+    const reordered = [...siblings];
+    reordered.splice(from, 1);
+    reordered.splice(to, 0, line);
+
+    // Redeal the existing order values rather than renumbering from zero, so
+    // nothing outside this group has to move.
+    const slots = siblings.map((l) => l.order);
+    const next = new Map(reordered.map((l, i) => [l.categoryId, slots[i]]));
+
+    return {
+      ...year,
+      lines: year.lines.map((l) => {
+        const order = next.get(l.categoryId);
+        return order === undefined || order === l.order ? l : { ...l, order };
+      }),
+    };
+  });
+}
+
 /** Change which group a line belongs to, in this year only. */
 export function setLineGroup(
   doc: BudgetDoc,
