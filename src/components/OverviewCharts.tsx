@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { EChartsOption } from 'echarts';
-import type { BudgetDoc } from '../model/schema';
+import { GROUP_LABELS, type BudgetDoc } from '../model/schema';
 import { type OverviewRow, careerMonths, investmentSeries } from '../model/derive';
 import { formatMoney } from '../format';
 import { useChart } from '../charts/useChart';
@@ -170,7 +170,18 @@ function CareerSpending({ doc, theme }: { doc: BudgetDoc; theme: ChartTheme }) {
       { name: 'Cost of Living', color: theme.series[0], pick: (m: (typeof months)[0]) => m.costOfLiving },
       { name: 'Debt', color: theme.series[1], pick: (m: (typeof months)[0]) => m.debt },
       { name: 'Assets', color: theme.series[2], pick: (m: (typeof months)[0]) => m.assets },
-      { name: 'Recreation / Left Over', color: theme.series[3], pick: (m: (typeof months)[0]) => m.leftOver },
+      // Only once it holds something: most of the record predates the section,
+      // and an always-flat band would say nothing while taking a legend slot.
+      ...(months.some((m) => m.discretionary !== 0)
+        ? [
+            {
+              name: GROUP_LABELS.discretionary,
+              color: theme.series[4],
+              pick: (m: (typeof months)[0]) => m.discretionary,
+            },
+          ]
+        : []),
+      { name: 'Left Over', color: theme.series[3], pick: (m: (typeof months)[0]) => m.leftOver },
     ];
 
     return {

@@ -65,7 +65,7 @@ export function YearGrid({ doc, year, locked }: Props) {
 
         <tfoot style={{ '--group-color': 'var(--group-leftOver)' } as React.CSSProperties}>
           <tr className="row-leftover">
-            <th className="col-label">Recreation / Left Over</th>
+            <th className="col-label">Left Over</th>
             {leftOver.map((v, i) => (
               <td key={i} className={numClass(v)}>
                 {formatAmount(v)}

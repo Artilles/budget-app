@@ -33,15 +33,22 @@ export const MONTHS = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ] as const;
 
-export type Group = 'income' | 'assets' | 'debt' | 'costOfLiving';
+export type Group = 'income' | 'assets' | 'debt' | 'costOfLiving' | 'discretionary';
 
-export const GROUPS: readonly Group[] = ['income', 'assets', 'debt', 'costOfLiving'];
+export const GROUPS: readonly Group[] = [
+  'income',
+  'assets',
+  'debt',
+  'costOfLiving',
+  'discretionary',
+];
 
 export const GROUP_LABELS: Record<Group, string> = {
   income: 'Income',
   assets: 'Assets',
   debt: 'Debt',
   costOfLiving: 'Cost of Living',
+  discretionary: 'Discretionary Expenses',
 };
 
 export type CategoryId = string;

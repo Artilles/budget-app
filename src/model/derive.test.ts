@@ -6,9 +6,11 @@ import {
   careerMonths,
   compensationRows,
   investmentSeries,
+  leftOverMonthly,
   overviewRows,
   overviewTotals,
   vestingByYear,
+  yearTotals,
 } from './derive';
 
 /** 2016: 1,000/mo pay, 500/mo rent. 2017: 2,000/mo pay, 100/mo into a TFSA. */
@@ -418,5 +420,63 @@ describe('careerMonths', () => {
     expect(months[0].leftOver).toBe(500); // 1000 pay - 500 rent
     expect(months[12].assets).toBe(100);
     expect(months[12].leftOver).toBe(1_900); // 2000 pay - 100 TFSA
+  });
+});
+
+describe('discretionary expenses', () => {
+  /** 2026: 2,000/mo pay, 500/mo rent, 300/mo discretionary. */
+  function d2026(): BudgetDoc {
+    const base = doc();
+    return {
+      ...base,
+      categories: {
+        ...base.categories,
+        pay: { id: 'pay', name: 'Pay' },
+        rent: { id: 'rent', name: 'Rent' },
+        fun: { id: 'fun', name: 'Eating out' },
+      },
+      years: {
+        '2026': {
+          year: 2026,
+          lines: [
+            { categoryId: 'pay', group: 'income', order: 0, months: Array(12).fill(2000) },
+            { categoryId: 'rent', group: 'costOfLiving', order: 1, months: Array(12).fill(500) },
+            { categoryId: 'fun', group: 'discretionary', order: 2, months: Array(12).fill(300) },
+          ],
+        },
+      },
+    };
+  }
+
+  it('totals the section on its own', () => {
+    expect(yearTotals(d2026().years['2026']).discretionary).toBe(3_600);
+  });
+
+  it('subtracts it from left-over, like any other expense', () => {
+    // 24,000 income − 6,000 rent − 3,600 discretionary.
+    expect(yearTotals(d2026().years['2026']).leftOver).toBe(14_400);
+  });
+
+  it('reduces left-over month by month', () => {
+    expect(leftOverMonthly(d2026().years['2026'])[0]).toBe(2000 - 500 - 300);
+  });
+
+  it('reports zero for a year that has none, leaving left-over unchanged', () => {
+    const totals = yearTotals(doc().years['2016']);
+    expect(totals.discretionary).toBe(0);
+    // 1,000 pay − 500 rent, exactly as before the section existed.
+    expect(totals.leftOver).toBe(6_000);
+  });
+
+  it('carries into the career months, so the stack still sums to take-home', () => {
+    const jan = careerMonths(d2026()).find((m) => m.month === '2026-01')!;
+    expect(jan.discretionary).toBe(300);
+    expect(jan.costOfLiving + jan.discretionary + jan.leftOver).toBe(2000);
+  });
+
+  it('does not count as invested, so the Overview is unaffected', () => {
+    const row = overviewRows(d2026()).find((r) => r.year === 2026)!;
+    expect(row.invested).toBe(0);
+    expect(row.takeHome).toBe(24_000);
   });
 });

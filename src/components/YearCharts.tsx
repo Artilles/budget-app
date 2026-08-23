@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { EChartsOption } from 'echarts';
-import { MONTHS, type Year } from '../model/schema';
+import { GROUP_LABELS, MONTHS, type Year } from '../model/schema';
 import { groupMonthlyTotals, leftOverMonthly, yearTotals } from '../model/derive';
 import { formatMoney } from '../format';
 import { useChart } from '../charts/useChart';
@@ -32,11 +32,15 @@ function axisMoney(value: number): string {
   return `$${value}`;
 }
 
+/** The donut's title counts its slices, and reads better in words. */
+const PART_WORDS: Record<number, string> = { 2: 'two', 3: 'three', 4: 'four', 5: 'five' };
+
 function SpendingSummary({ year, theme }: { year: Year; theme: ChartTheme }) {
   const option = useMemo<EChartsOption>(() => {
     const costOfLiving = groupMonthlyTotals(year, 'costOfLiving');
     const debt = groupMonthlyTotals(year, 'debt');
     const assets = groupMonthlyTotals(year, 'assets');
+    const discretionary = groupMonthlyTotals(year, 'discretionary');
     const leftOver = leftOverMonthly(year);
     const income = groupMonthlyTotals(year, 'income');
 
@@ -45,7 +49,12 @@ function SpendingSummary({ year, theme }: { year: Year; theme: ChartTheme }) {
       { name: 'Cost of Living', data: costOfLiving, color: theme.series[0] },
       { name: 'Debt', data: debt, color: theme.series[1] },
       { name: 'Assets', data: assets, color: theme.series[2] },
-      { name: 'Recreation / Left Over', data: leftOver, color: theme.series[3] },
+      // Omitted where it holds nothing, so years predating the section do not
+      // carry a permanently flat band and a legend entry explaining nothing.
+      ...(discretionary.some((v) => v !== 0)
+        ? [{ name: GROUP_LABELS.discretionary, data: discretionary, color: theme.series[4] }]
+        : []),
+      { name: 'Left Over', data: leftOver, color: theme.series[3] },
     ];
 
     return {
@@ -132,7 +141,8 @@ function YearSplit({ year, theme }: { year: Year; theme: ChartTheme }) {
       { name: 'Cost of Living', value: totals.costOfLiving, color: theme.series[0] },
       { name: 'Debt', value: totals.debt, color: theme.series[1] },
       { name: 'Assets', value: totals.assets, color: theme.series[2] },
-      { name: 'Recreation / Left Over', value: totals.leftOver, color: theme.series[3] },
+      { name: GROUP_LABELS.discretionary, value: totals.discretionary, color: theme.series[4] },
+      { name: 'Left Over', value: totals.leftOver, color: theme.series[3] },
     ].filter((s) => s.value > 0);
 
     return {
@@ -144,7 +154,7 @@ function YearSplit({ year, theme }: { year: Year; theme: ChartTheme }) {
       animation: false,
       title: [
         {
-          text: `${year.year} — the year in four parts`,
+          text: `${year.year} — the year in ${PART_WORDS[slices.length] ?? slices.length} parts`,
           left: 0,
           textStyle: { color: theme.textPrimary, fontSize: 13, fontWeight: 600 },
         },
@@ -210,7 +220,13 @@ function YearSplit({ year, theme }: { year: Year; theme: ChartTheme }) {
 
   const ref = useChart(option);
   const totals = yearTotals(year);
-  const preIncome = totals.assets + totals.debt + totals.costOfLiving + totals.leftOver - totals.income;
+  const preIncome =
+    totals.assets +
+    totals.debt +
+    totals.costOfLiving +
+    totals.discretionary +
+    totals.leftOver -
+    totals.income;
 
   return (
     <div className="chart-with-note">

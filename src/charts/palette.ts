@@ -81,12 +81,16 @@ export function groupColor(group: Group, theme: ChartTheme): string {
       return theme.series[1];
     case 'assets':
       return theme.series[2];
+    // Slot 3 is the derived left-over row, so this takes the next validated
+    // slot rather than reusing one and colliding with it.
+    case 'discretionary':
+      return theme.series[4];
     case 'income':
       return theme.textSecondary;
   }
 }
 
-/** The colour of the derived Recreation / Left Over row. */
+/** The colour of the derived Left Over row. */
 export function leftOverColor(theme: ChartTheme): string {
   return theme.series[3];
 }
@@ -239,7 +243,7 @@ export function useChartTheme(): ChartTheme {
 export function usePublishGroupColors(theme: ChartTheme): void {
   useEffect(() => {
     const root = document.documentElement;
-    const groups: Group[] = ['income', 'assets', 'debt', 'costOfLiving'];
+    const groups: Group[] = ['income', 'assets', 'debt', 'costOfLiving', 'discretionary'];
     for (const group of groups) {
       root.style.setProperty(`--group-${group}`, groupColor(group, theme));
     }

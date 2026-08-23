@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { GROUPS, GROUP_LABELS, type BudgetDoc, type Group, type Line, type Year } from '../model/schema';
+import {
+  GROUPS,
+  GROUP_LABELS,
+  type BudgetDoc,
+  type Group,
+  type Line,
+  type Year,
+} from '../model/schema';
 import { groupTotal, lineTotal, linesIn } from '../model/derive';
 import { formatMoney } from '../format';
 import { useBudget } from '../store/useBudget';

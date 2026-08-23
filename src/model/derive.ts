@@ -19,7 +19,7 @@ import {
  *                   take-home pay, because it was deducted before it
  */
 
-const EXPENSE_GROUPS: readonly Group[] = ['assets', 'debt', 'costOfLiving'];
+const EXPENSE_GROUPS: readonly Group[] = ['assets', 'debt', 'costOfLiving', 'discretionary'];
 
 export function sum(values: readonly (number | null)[]): number {
   let total = 0;
@@ -54,7 +54,9 @@ export function groupMonthlyTotals(year: Year, group: Group): number[] {
 }
 
 /**
- * Left-over per month — the workbook's "Recreation/Left Over" row.
+ * Left-over per month — shown as "Left Over", and the workbook's
+ * "Recreation/Left Over" row (renamed here, since discretionary spending now
+ * has a section of its own and "Recreation" read as overlapping with it).
  * Take-home pay minus every expense that was actually paid out of it.
  */
 export function leftOverMonthly(year: Year): number[] {
@@ -70,6 +72,7 @@ export interface YearTotals {
   assets: number;
   debt: number;
   costOfLiving: number;
+  discretionary: number;
   leftOver: number;
 }
 
@@ -79,6 +82,7 @@ export function yearTotals(year: Year): YearTotals {
   const assets = groupTotal(year, 'assets');
   const debt = groupTotal(year, 'debt');
   const costOfLiving = groupTotal(year, 'costOfLiving');
+  const discretionary = groupTotal(year, 'discretionary');
 
   const notDeducted = sum(
     year.lines
@@ -91,7 +95,8 @@ export function yearTotals(year: Year): YearTotals {
     assets,
     debt,
     costOfLiving,
-    leftOver: income - (assets + debt + costOfLiving) + notDeducted,
+    discretionary,
+    leftOver: income - (assets + debt + costOfLiving + discretionary) + notDeducted,
   };
 }
 
@@ -177,6 +182,7 @@ export interface CareerMonth {
   costOfLiving: number;
   debt: number;
   assets: number;
+  discretionary: number;
   leftOver: number;
 }
 
@@ -192,6 +198,7 @@ export function careerMonths(doc: BudgetDoc): CareerMonth[] {
     const costOfLiving = groupMonthlyTotals(year, 'costOfLiving');
     const debt = groupMonthlyTotals(year, 'debt');
     const assets = groupMonthlyTotals(year, 'assets');
+    const discretionary = groupMonthlyTotals(year, 'discretionary');
     const leftOver = leftOverMonthly(year);
 
     for (let m = 0; m < 12; m += 1) {
@@ -200,6 +207,7 @@ export function careerMonths(doc: BudgetDoc): CareerMonth[] {
         costOfLiving: costOfLiving[m],
         debt: debt[m],
         assets: assets[m],
+        discretionary: discretionary[m],
         leftOver: leftOver[m],
       });
     }
