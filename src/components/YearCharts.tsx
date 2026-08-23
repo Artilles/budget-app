@@ -107,6 +107,11 @@ function SpendingSummary({ year, theme }: { year: Year; theme: ChartTheme }) {
           smooth: false,
           showSymbol: false,
           areaStyle: { color: band.color, opacity: 1 },
+          // The legend swatch reads itemStyle, not areaStyle. Without this it
+          // falls back to ECharts' own palette by series index, so the key
+          // disagrees with the plot — and silently re-colours every band after
+          // one is inserted.
+          itemStyle: { color: band.color },
           // A surface-coloured stroke separates adjacent bands.
           lineStyle: { color: theme.surface, width: 2 },
           emphasis: { focus: 'series' as const },

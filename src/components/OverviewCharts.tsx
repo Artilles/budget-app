@@ -233,6 +233,8 @@ function CareerSpending({ doc, theme }: { doc: BudgetDoc; theme: ChartTheme }) {
         stack: 'total',
         showSymbol: false,
         areaStyle: { color: band.color, opacity: 1 },
+        // The legend reads itemStyle, not areaStyle — see YearCharts.
+        itemStyle: { color: band.color },
         lineStyle: { color: theme.surface, width: 1 },
         emphasis: { focus: 'series' as const },
         data: months.map(band.pick),
