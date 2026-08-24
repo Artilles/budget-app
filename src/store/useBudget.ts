@@ -7,6 +7,7 @@ import {
   createEmptyDoc,
 } from '../model/schema';
 import { migrate } from '../model/migrate';
+import { type NewBudget, createStarterDoc } from '../model/starter';
 import * as mutate from '../model/mutate';
 import { PickerCancelledError } from '../storage/adapter';
 import { getStorage } from '../storage';
@@ -36,7 +37,13 @@ interface BudgetState {
 
   init: () => Promise<void>;
   openExisting: () => Promise<void>;
-  createNew: () => Promise<void>;
+  /**
+   * Create a budget from the New Budget wizard: named, with starter categories
+   * laid out in the current year, and the investment accounts given. Resolves
+   * false when the save-location picker is dismissed, so the wizard can stay
+   * open rather than closing on a cancel.
+   */
+  createFromWizard: (input: NewBudget) => Promise<boolean>;
   reconnect: () => Promise<void>;
   forget: () => Promise<void>;
   /** Replace the document and schedule an autosave. */
@@ -112,6 +119,20 @@ let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 /** Set when a change lands mid-save, so the newer state is not lost. */
 let saveAgain = false;
 
+/**
+ * Offer the budget's name as the file name, so the two line up by default
+ * without ever being tied together — the user can save it as anything.
+ */
+function suggestedFileName(name: string): string {
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+  return `${slug || 'budget'}.json`;
+}
+
 function describe(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
@@ -169,17 +190,18 @@ export const useBudget = create<BudgetState>((set, get) => ({
     await readIntoStore(set);
   },
 
-  async createNew() {
+  async createFromWizard(input) {
     if (get().pendingSave) await get().saveNow();
     const storage = await getStorage();
     try {
-      await storage.createNew();
+      await storage.createNew(suggestedFileName(input.name));
     } catch (err) {
-      if (err instanceof PickerCancelledError) return;
+      if (err instanceof PickerCancelledError) return false;
       set({ status: 'error', error: describe(err) });
-      return;
+      return false;
     }
-    const doc = createEmptyDoc();
+
+    const doc = createStarterDoc(input);
     set({
       status: 'ready',
       doc,
@@ -188,6 +210,7 @@ export const useBudget = create<BudgetState>((set, get) => ({
       selectedYear: defaultYear(doc),
     });
     await get().saveNow();
+    return true;
   },
 
   async reconnect() {

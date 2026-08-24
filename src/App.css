@@ -1677,3 +1677,134 @@ kbd {
   border-radius: 4px;
   padding: 0.05em 0.35em;
 }
+
+/* New budget wizard -------------------------------------------------------- */
+
+.wizard {
+  width: min(34rem, 100%);
+}
+
+/* Step names rather than a bar: three steps is few enough to just say. */
+.wizard-steps {
+  display: flex;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.wizard-steps li.current {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.wizard-steps li.done {
+  color: var(--accent);
+}
+
+.wizard-body {
+  padding: 1.25rem;
+  min-height: 13rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.wizard-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.wizard-field span,
+.wizard-question {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.wizard-field input {
+  font: inherit;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--cell-editable-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.6rem;
+}
+
+.wizard-field input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.wizard-note {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.wizard-accounts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.wizard-accounts li {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.wizard-accounts .line-rename {
+  flex: 1;
+}
+
+.wizard-add {
+  align-self: flex-start;
+  font-size: 0.85rem;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-dim);
+  padding: 0.25rem 0;
+}
+
+.wizard-add:hover {
+  color: var(--text);
+  background: transparent;
+}
+
+.wizard-summary {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 0.9rem;
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.wizard-summary dt {
+  color: var(--text-dim);
+}
+
+.wizard-summary dd {
+  margin: 0;
+  word-break: break-word;
+}
+
+.wizard-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.9rem 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.wizard-foot .spacer {
+  flex: 1;
+}

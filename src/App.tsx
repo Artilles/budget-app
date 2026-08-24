@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import './App.css';
 import { useBudget } from './store/useBudget';
 import { MAX_BUDGET_NAME } from './model/schema';
+import { NewBudgetWizard } from './components/NewBudgetWizard';
 import { YearView } from './views/YearView';
 import { OverviewView } from './views/OverviewView';
 import { RaisesView } from './views/RaisesView';
@@ -42,18 +43,23 @@ export default function App() {
     };
   }, []);
 
+  // Held here rather than in either caller: the gate and the file menu both
+  // open the same wizard, and it outlives the menu that launched it.
+  const [creating, setCreating] = useState(false);
+
   return (
     <div className="app">
       <header className="app-header">
         <h1>Budget</h1>
         {status === 'ready' && <ViewTabs />}
         <div className="spacer" />
-        {status === 'ready' && <FileMenu />}
+        {status === 'ready' && <FileMenu onNewBudget={() => setCreating(true)} />}
         <SaveState />
       </header>
       <main className="app-main">
-        <Body status={status} error={error} />
+        <Body status={status} error={error} onNewBudget={() => setCreating(true)} />
       </main>
+      {creating && <NewBudgetWizard onClose={() => setCreating(false)} />}
     </div>
   );
 }
@@ -64,12 +70,11 @@ export default function App() {
  * Switching used to be reachable only from the error screens, which meant a
  * working session had no way out of the file it happened to open.
  */
-function FileMenu() {
+function FileMenu({ onNewBudget }: { onNewBudget: () => void }) {
   const fileName = useBudget((s) => s.fileName);
   const budgetName = useBudget((s) => s.doc?.name ?? '');
   const setBudgetName = useBudget((s) => s.setBudgetName);
   const openExisting = useBudget((s) => s.openExisting);
-  const createNew = useBudget((s) => s.createNew);
 
   const [open, setOpen] = useState(false);
   // Renaming is a deliberate act rather than something you fall into by opening
@@ -185,7 +190,13 @@ function FileMenu() {
           <button role="menuitem" onClick={() => run(openExisting)}>
             Open a different budget…
           </button>
-          <button role="menuitem" onClick={() => run(createNew)}>
+          <button
+            role="menuitem"
+            onClick={() => {
+              close();
+              onNewBudget();
+            }}
+          >
             Create a new budget…
           </button>
           <p className="file-menu-note">
@@ -222,9 +233,16 @@ function SaveState() {
   return <span className="save-state" />;
 }
 
-function Body({ status, error }: { status: string; error: string | null }) {
+function Body({
+  status,
+  error,
+  onNewBudget,
+}: {
+  status: string;
+  error: string | null;
+  onNewBudget: () => void;
+}) {
   const openExisting = useBudget((s) => s.openExisting);
-  const createNew = useBudget((s) => s.createNew);
   const reconnect = useBudget((s) => s.reconnect);
   const forget = useBudget((s) => s.forget);
   const fileName = useBudget((s) => s.fileName);
@@ -282,7 +300,7 @@ function Body({ status, error }: { status: string; error: string | null }) {
             in it.
           </p>
           <div className="actions">
-            <button className="primary" onClick={() => void createNew()}>
+            <button className="primary" onClick={onNewBudget}>
               Create a new budget
             </button>
             <button onClick={() => void openExisting()}>Open an existing one</button>
