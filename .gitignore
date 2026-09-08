@@ -19,6 +19,7 @@ src-tauri/gen
 # Personal financial data — never commit these.
 budget.json
 budget.import.json
+budget.example.json
 *.budget.json
 /*.xlsx
 
