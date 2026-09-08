@@ -2,6 +2,7 @@ import type { ToolDefinition } from './types';
 import { EMERGENCY_FUND_ID, EmergencyFund } from './EmergencyFund';
 import { CONTRIBUTION_ROOM_ID, ContributionRoom } from './ContributionRoom';
 import { AFFORDABLE_CONTRIBUTION_ID, AffordableContribution } from './AffordableContribution';
+import { SPENDING_FLOWCHART_ID, SpendingFlowchart } from './SpendingFlowchart';
 
 /**
  * Every tool the app offers, in the order they appear on the index.
@@ -11,6 +12,12 @@ import { AFFORDABLE_CONTRIBUTION_ID, AffordableContribution } from './Affordable
  * Saved inputs land under `doc.tools[id]` automatically.
  */
 export const TOOLS: ToolDefinition[] = [
+  {
+    id: SPENDING_FLOWCHART_ID,
+    name: 'Spending flowchart',
+    summary: 'What should the next dollar go towards?',
+    Component: SpendingFlowchart,
+  },
   {
     id: EMERGENCY_FUND_ID,
     name: 'Emergency fund',
