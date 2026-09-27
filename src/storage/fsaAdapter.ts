@@ -1,6 +1,10 @@
 import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval';
-import { type BudgetDoc, serializeDoc } from '../model/schema';
-import { NoFileConnectedError, PickerCancelledError, type StorageAdapter } from './adapter';
+import {
+  ExportOverBudgetError,
+  NoFileConnectedError,
+  PickerCancelledError,
+  type StorageAdapter,
+} from './adapter';
 
 /**
  * IndexedDB holds the *file handle only* — never the budget data itself.
@@ -11,6 +15,8 @@ const HANDLE_KEY = 'budget:file-handle';
 
 /** Keeps the OS picker anchored to the same folder between sessions. */
 const PICKER_ID = 'budget-file';
+/** Separate, so an export folder never becomes where the budget picker opens. */
+const EXPORT_PICKER_ID = 'budget-export';
 
 const FILE_TYPES: FilePickerAcceptType[] = [
   { description: 'Budget file', accept: { 'application/json': ['.json'] } },
@@ -18,6 +24,21 @@ const FILE_TYPES: FilePickerAcceptType[] = [
 
 function isAbort(err: unknown): boolean {
   return err instanceof DOMException && err.name === 'AbortError';
+}
+
+/**
+ * createWritable() writes to a swap file and commits atomically on close, so
+ * an interrupted save cannot truncate the existing file.
+ */
+async function writeTo(handle: FileSystemFileHandle, text: string): Promise<void> {
+  const writable = await handle.createWritable();
+  try {
+    await writable.write(text);
+  } catch (err) {
+    await writable.abort();
+    throw err;
+  }
+  await writable.close();
 }
 
 export class FsaStorageAdapter implements StorageAdapter {
@@ -91,34 +112,28 @@ export class FsaStorageAdapter implements StorageAdapter {
     await idbDel(HANDLE_KEY);
   }
 
-  async load(): Promise<unknown> {
-    const handle = this.#require();
-    const file = await handle.getFile();
-    const text = await file.text();
-    if (!text.trim()) return null;
-    try {
-      return JSON.parse(text);
-    } catch (err) {
-      throw new Error(
-        `"${handle.name}" is not valid JSON and was not opened, so it has not been modified. ` +
-          `(${(err as Error).message})`,
-        { cause: err },
-      );
-    }
+  async readText(): Promise<string> {
+    const file = await this.#require().getFile();
+    return file.text();
   }
 
-  async save(doc: BudgetDoc): Promise<void> {
-    const handle = this.#require();
-    // createWritable() writes to a swap file and commits atomically on close,
-    // so an interrupted save cannot truncate the existing file.
-    const writable = await handle.createWritable();
+  async writeText(text: string): Promise<void> {
+    await writeTo(this.#require(), text);
+  }
+
+  async exportCopy(text: string, suggestedName: string): Promise<string> {
+    const current = this.#require();
+    if (!window.showSaveFilePicker) throw new Error('This browser cannot create local files.');
+    let target: FileSystemFileHandle;
     try {
-      await writable.write(serializeDoc(doc));
+      target = await window.showSaveFilePicker({ id: EXPORT_PICKER_ID, suggestedName, types: FILE_TYPES });
     } catch (err) {
-      await writable.abort();
+      if (isAbort(err)) throw new PickerCancelledError();
       throw err;
     }
-    await writable.close();
+    if (await target.isSameEntry(current)) throw new ExportOverBudgetError();
+    await writeTo(target, text);
+    return target.name;
   }
 
   async #remember(handle: FileSystemFileHandle): Promise<void> {

@@ -3,6 +3,12 @@
 A personal finance app for annual budgeting, investment tracking, and salary history. Uses
 local data only, stored in JSON format.
 
+A budget can optionally be protected with a passphrase, either when it is created or later
+from the budget menu. The file is then encrypted (AES-256-GCM, with the key derived from the
+passphrase by PBKDF2-SHA256 at 600,000 iterations), so it can live in a synced folder and be
+opened on any computer with the same passphrase. The passphrase is never stored and cannot be
+recovered. "Export unencrypted copy" in the same menu writes a readable copy elsewhere.
+
 ## What it does
 
 - **Budget** — the twelve-month grid, one year at a time. Categories are grouped into

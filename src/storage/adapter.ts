@@ -1,12 +1,13 @@
-import type { BudgetDoc } from '../model/schema';
-
 /**
  * All persistence goes through this interface. Nothing above it may touch the
  * File System Access API, IndexedDB, or Tauri directly.
  *
- * The browser build implements it with the File System Access API; the eventual
- * Tauri build implements it with plugin-fs. Keeping the surface this narrow is
- * what makes that swap a new file rather than a refactor.
+ * The browser build implements it with the File System Access API; the Tauri
+ * build implements it with plugin-fs. Keeping the surface this narrow is what
+ * makes that swap a new file rather than a refactor.
+ *
+ * It deals in text, not documents: parsing and encryption happen once, above
+ * it, instead of being duplicated in every implementation.
  */
 export interface StorageAdapter {
   /** False when the environment cannot support this adapter (e.g. Firefox). */
@@ -35,11 +36,24 @@ export interface StorageAdapter {
   /** Forget the remembered file without deleting it. */
   forget(): Promise<void>;
 
-  /** Read and parse. Throws if no file is connected. */
-  load(): Promise<unknown>;
+  /** Read the connected file's contents. Throws if no file is connected. */
+  readText(): Promise<string>;
 
-  /** Serialise and write atomically. Throws if no file is connected. */
-  save(doc: BudgetDoc): Promise<void>;
+  /** Replace the connected file's contents atomically. Throws if no file is connected. */
+  writeText(text: string): Promise<void>;
+
+  /**
+   * Prompt for a location and write `text` there, leaving the connected file
+   * connected. Resolves with the chosen file's name. Requires a user gesture.
+   */
+  exportCopy(text: string, suggestedName: string): Promise<string>;
+}
+
+/** Refuses an export that would overwrite the budget it was exported from. */
+export class ExportOverBudgetError extends Error {
+  constructor() {
+    super('That is the budget file itself. Choose a different name or folder for the copy.');
+  }
 }
 
 export class NoFileConnectedError extends Error {

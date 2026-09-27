@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
 import './App.css';
 import { useBudget } from './store/useBudget';
 import { MAX_BUDGET_NAME } from './model/schema';
 import { NewBudgetWizard } from './components/NewBudgetWizard';
+import { ProtectDialog } from './components/ProtectDialog';
 import { YearView } from './views/YearView';
 import { OverviewView } from './views/OverviewView';
 import { RaisesView } from './views/RaisesView';
@@ -75,8 +76,15 @@ function FileMenu({ onNewBudget }: { onNewBudget: () => void }) {
   const budgetName = useBudget((s) => s.doc?.name ?? '');
   const setBudgetName = useBudget((s) => s.setBudgetName);
   const openExisting = useBudget((s) => s.openExisting);
+  const encrypted = useBudget((s) => s.encrypted);
+  const exportUnencrypted = useBudget((s) => s.exportUnencrypted);
 
   const [open, setOpen] = useState(false);
+  // Lives here, not inside the panel, so it survives the menu closing.
+  const [protecting, setProtecting] = useState(false);
+  // The menu stays open through an export so its outcome can be reported in
+  // place; there is nowhere else in the header to say it.
+  const [exportNote, setExportNote] = useState<{ text: string; failed?: boolean } | null>(null);
   // Renaming is a deliberate act rather than something you fall into by opening
   // the menu, so the name is read-only until the pencil is clicked.
   const [editing, setEditing] = useState(false);
@@ -88,6 +96,17 @@ function FileMenu({ onNewBudget }: { onNewBudget: () => void }) {
   const close = () => {
     setOpen(false);
     setEditing(false);
+    setExportNote(null);
+  };
+
+  const runExport = async () => {
+    setExportNote(null);
+    try {
+      const name = await exportUnencrypted();
+      if (name) setExportNote({ text: `Saved a readable copy as ${name}.` });
+    } catch (err) {
+      setExportNote({ text: err instanceof Error ? err.message : String(err), failed: true });
+    }
   };
 
   useEffect(() => {
@@ -187,6 +206,38 @@ function FileMenu({ onNewBudget }: { onNewBudget: () => void }) {
           <p className="file-menu-stored" title={fileName ?? undefined}>
             Stored in {fileName ?? '—'}
           </p>
+          <div className="file-menu-protection">
+            {encrypted ? (
+              <>
+                <p className="protected-flag">
+                  <LockIcon />
+                  Passphrase protected
+                </p>
+                <button
+                  role="menuitem"
+                  title="Saves a copy with no passphrase. Anyone who can open that file can read it."
+                  onClick={() => void runExport()}
+                >
+                  Export unencrypted copy…
+                </button>
+              </>
+            ) : (
+              <button
+                role="menuitem"
+                onClick={() => {
+                  close();
+                  setProtecting(true);
+                }}
+              >
+                Add passphrase protection…
+              </button>
+            )}
+            {exportNote && (
+              <p className={exportNote.failed ? 'file-menu-note failed' : 'file-menu-note'} role="status">
+                {exportNote.text}
+              </p>
+            )}
+          </div>
           <button role="menuitem" onClick={() => run(openExisting)}>
             Open a different budget…
           </button>
@@ -205,7 +256,85 @@ function FileMenu({ onNewBudget }: { onNewBudget: () => void }) {
           </p>
         </div>
       )}
+      {protecting && <ProtectDialog onClose={() => setProtecting(false)} />}
     </div>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+      <rect x="3" y="7" width="10" height="7.5" rx="1.5" fill="currentColor" />
+      <path d="M5.25 7V5a2.75 2.75 0 0 1 5.5 0v2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
+function UnlockGate() {
+  const fileName = useBudget((s) => s.fileName);
+  const unlock = useBudget((s) => s.unlock);
+  const openExisting = useBudget((s) => s.openExisting);
+  const forget = useBudget((s) => s.forget);
+
+  const [passphrase, setPassphrase] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [wrong, setWrong] = useState(false);
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!passphrase || busy) return;
+    setBusy(true);
+    setWrong(false);
+    const opened = await unlock(passphrase);
+    // On success this component unmounts; only a wrong passphrase lands here.
+    if (!opened) {
+      setBusy(false);
+      setWrong(true);
+    }
+  };
+
+  return (
+    <form className="gate" onSubmit={(e) => void submit(e)}>
+      <h2 className="gate-title">
+        <LockIcon />
+        This budget is protected
+      </h2>
+      <p>
+        Enter the passphrase for <code>{fileName}</code> to open it. The passphrase is never
+        stored, so the app asks each time it opens the budget.
+      </p>
+      <label className="wizard-field">
+        <span>Passphrase</span>
+        <input
+          type="password"
+          autoFocus
+          autoComplete="current-password"
+          value={passphrase}
+          aria-invalid={wrong || undefined}
+          disabled={busy}
+          onChange={(e) => {
+            setPassphrase(e.target.value);
+            setWrong(false);
+          }}
+        />
+      </label>
+      {wrong && (
+        <p className="wizard-error" role="alert">
+          That passphrase did not unlock this budget.
+        </p>
+      )}
+      <div className="actions">
+        <button type="submit" className="primary" disabled={!passphrase || busy}>
+          {busy ? 'Unlocking…' : 'Unlock'}
+        </button>
+        <button type="button" onClick={() => void openExisting()} disabled={busy}>
+          Open a different budget
+        </button>
+        <button type="button" onClick={() => void forget()} disabled={busy}>
+          Start over
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -265,8 +394,9 @@ function Body({
         <div className="gate">
           <h2>Reconnect to your budget</h2>
           <p>
-            The browser remembers <code>{fileName}</code> but needs your permission again to read
-            and write it. This happens after a restart.
+            The app remembers <code>{fileName}</code> but needs your permission again to read and
+            write it. In a browser this happens after a restart; in the desktop app, only once for
+            a budget opened before access was remembered.
           </p>
           <div className="actions">
             <button className="primary" onClick={() => void reconnect()}>
@@ -276,6 +406,9 @@ function Body({
           </div>
         </div>
       );
+
+    case 'locked':
+      return <UnlockGate />;
 
     case 'error':
       return (

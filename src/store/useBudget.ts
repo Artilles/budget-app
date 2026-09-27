@@ -5,12 +5,22 @@ import {
   type Raise,
   type VestingEvent,
   createEmptyDoc,
+  serializeDoc,
 } from '../model/schema';
 import { migrate } from '../model/migrate';
 import { type NewBudget, createStarterDoc } from '../model/starter';
 import * as mutate from '../model/mutate';
 import { PickerCancelledError } from '../storage/adapter';
 import { getStorage } from '../storage';
+import {
+  type CipherSession,
+  type EncryptedEnvelope,
+  WrongPassphraseError,
+  createSession,
+  isEncryptedEnvelope,
+  seal,
+  unseal,
+} from '../storage/encryption';
 
 const AUTOSAVE_DELAY_MS = 800;
 
@@ -20,6 +30,8 @@ export type BudgetStatus =
   | 'no-file'
   | 'needs-permission'
   | 'loading'
+  /** The file is passphrase-protected and waiting for `unlock`. */
+  | 'locked'
   | 'ready'
   | 'error';
 
@@ -30,6 +42,8 @@ interface BudgetState {
   fileName: string | null;
   saving: boolean;
   lastSavedAt: number | null;
+  /** True when the connected file is written encrypted. */
+  encrypted: boolean;
 
   /** Year currently being viewed, as a string key. Null before a doc loads. */
   selectedYear: string | null;
@@ -41,13 +55,24 @@ interface BudgetState {
    * Create a budget from the New Budget wizard: named, with starter categories
    * laid out in the current year, and the investment accounts given. Resolves
    * false when the save-location picker is dismissed, so the wizard can stay
-   * open rather than closing on a cancel.
+   * open rather than closing on a cancel. With a passphrase, the file is
+   * encrypted from its very first write.
    */
-  createFromWizard: (input: NewBudget) => Promise<boolean>;
+  createFromWizard: (input: NewBudget, passphrase?: string) => Promise<boolean>;
+  /** Resolves false on a wrong passphrase; other failures move to 'error'. */
+  unlock: (passphrase: string) => Promise<boolean>;
+  /** Encrypt the connected file from now on. Throws if the write fails. */
+  enableProtection: (passphrase: string) => Promise<void>;
+  /**
+   * Write a readable copy somewhere the user picks. Resolves with its file
+   * name, or null when the picker is dismissed.
+   */
+  exportUnencrypted: () => Promise<string | null>;
   reconnect: () => Promise<void>;
   forget: () => Promise<void>;
   /** Replace the document and schedule an autosave. */
   setDoc: (doc: BudgetDoc) => void;
+  /** Resolves once the document on screen, as of this call, is on disk (or failed). */
   saveNow: () => Promise<void>;
   /** True while an autosave is scheduled but has not run yet. */
   pendingSave: boolean;
@@ -118,6 +143,22 @@ function defaultYear(doc: BudgetDoc): string | null {
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 /** Set when a change lands mid-save, so the newer state is not lost. */
 let saveAgain = false;
+/** The running save loop, so later callers can wait for it instead of racing it. */
+let inFlight: Promise<void> | null = null;
+
+/**
+ * The derived key for an encrypted file. Deliberately outside the store: it is
+ * not UI state, and keeping it out means it never shows up in a state dump.
+ */
+let session: CipherSession | null = null;
+/** An encrypted file read but not yet unlocked. */
+let lockedEnvelope: EncryptedEnvelope | null = null;
+
+/** Name for an exported copy that says plainly what it is. */
+function exportFileName(fileName: string | null): string {
+  const base = (fileName ?? 'budget').replace(/\.json$/i, '');
+  return `${base}-unencrypted.json`;
+}
 
 /**
  * Offer the budget's name as the file name, so the two line up by default
@@ -144,6 +185,7 @@ export const useBudget = create<BudgetState>((set, get) => ({
   fileName: null,
   saving: false,
   lastSavedAt: null,
+  encrypted: false,
   pendingSave: false,
   selectedYear: null,
   // Overview leads the nav, so it is also where the app opens.
@@ -190,7 +232,7 @@ export const useBudget = create<BudgetState>((set, get) => ({
     await readIntoStore(set);
   },
 
-  async createFromWizard(input) {
+  async createFromWizard(input, passphrase) {
     if (get().pendingSave) await get().saveNow();
     const storage = await getStorage();
     try {
@@ -201,16 +243,67 @@ export const useBudget = create<BudgetState>((set, get) => ({
       return false;
     }
 
+    // Before the first save, so the new file never exists unencrypted.
+    session = passphrase ? await createSession(passphrase) : null;
+    lockedEnvelope = null;
     const doc = createStarterDoc(input);
     set({
       status: 'ready',
       doc,
       error: null,
       fileName: storage.fileName,
+      encrypted: session !== null,
       selectedYear: defaultYear(doc),
     });
     await get().saveNow();
     return true;
+  },
+
+  async unlock(passphrase) {
+    if (!lockedEnvelope) return false;
+    let plaintext: string;
+    try {
+      ({ plaintext, session } = await unseal(lockedEnvelope, passphrase));
+    } catch (err) {
+      if (err instanceof WrongPassphraseError) return false;
+      set({ status: 'error', error: describe(err) });
+      return true;
+    }
+    lockedEnvelope = null;
+    try {
+      applyLoaded(set, parseJson(plaintext, get().fileName), true);
+    } catch (err) {
+      session = null;
+      set({ status: 'error', error: describe(err), doc: null });
+    }
+    return true;
+  },
+
+  async enableProtection(passphrase) {
+    const next = await createSession(passphrase);
+    session = next;
+    // Waits out any save already running, then writes again under the new key,
+    // so a plaintext write cannot land after the encrypted one.
+    saveAgain = true;
+    await get().saveNow();
+    const { error } = get();
+    if (error) {
+      // The atomic write failed, so the file on disk is still the plaintext one.
+      if (session === next) session = null;
+      throw new Error(error);
+    }
+    set({ encrypted: true });
+  },
+
+  async exportUnencrypted() {
+    const { doc, fileName } = get();
+    if (!doc) return null;
+    try {
+      return await (await getStorage()).exportCopy(serializeDoc(doc), exportFileName(fileName));
+    } catch (err) {
+      if (err instanceof PickerCancelledError) return null;
+      throw err;
+    }
   },
 
   async reconnect() {
@@ -222,7 +315,16 @@ export const useBudget = create<BudgetState>((set, get) => ({
   async forget() {
     if (get().pendingSave) await get().saveNow();
     await (await getStorage()).forget();
-    set({ status: 'no-file', doc: null, fileName: null, error: null, lastSavedAt: null });
+    session = null;
+    lockedEnvelope = null;
+    set({
+      status: 'no-file',
+      doc: null,
+      fileName: null,
+      error: null,
+      lastSavedAt: null,
+      encrypted: false,
+    });
   },
 
   setDoc(doc) {
@@ -233,31 +335,38 @@ export const useBudget = create<BudgetState>((set, get) => ({
     }, AUTOSAVE_DELAY_MS);
   },
 
-  async saveNow() {
-    const { doc, saving } = get();
-    if (!doc) return;
-    if (saving) {
+  saveNow() {
+    if (inFlight) {
       saveAgain = true;
-      return;
+      return inFlight;
     }
-    if (autosaveTimer) {
-      clearTimeout(autosaveTimer);
-      autosaveTimer = null;
-    }
+    if (!get().doc) return Promise.resolve();
+    inFlight = (async () => {
+      try {
+        do {
+          saveAgain = false;
+          const { doc } = get();
+          if (!doc) return;
+          if (autosaveTimer) {
+            clearTimeout(autosaveTimer);
+            autosaveTimer = null;
+          }
 
-    set({ saving: true, pendingSave: false });
-    try {
-      await (await getStorage()).save(doc);
-      set({ saving: false, lastSavedAt: Date.now(), error: null });
-    } catch (err) {
-      set({ saving: false, error: describe(err) });
-      return;
-    }
-
-    if (saveAgain) {
-      saveAgain = false;
-      await get().saveNow();
-    }
+          set({ saving: true, pendingSave: false });
+          try {
+            const json = serializeDoc(doc);
+            await (await getStorage()).writeText(session ? await seal(session, json) : json);
+            set({ saving: false, lastSavedAt: Date.now(), error: null });
+          } catch (err) {
+            set({ saving: false, error: describe(err) });
+            return;
+          }
+        } while (saveAgain);
+      } finally {
+        inFlight = null;
+      }
+    })();
+    return inFlight;
   },
 
   selectYear(year) {
@@ -432,24 +541,54 @@ if (import.meta.env.DEV) {
   (globalThis as unknown as { __budget?: typeof useBudget }).__budget = useBudget;
 }
 
+type SetState = (partial: Partial<BudgetState>) => void;
+
 /**
- * Read, migrate, validate. On failure the document is left null so autosave
- * cannot fire — a file we failed to understand must never be written over.
+ * Read, then either lock (encrypted) or parse, migrate, and validate. The
+ * document stays null until a file is fully understood, so autosave cannot
+ * fire — a file we failed to understand must never be written over, and the
+ * previous file's document must never be written into this one.
  */
-async function readIntoStore(set: (partial: Partial<BudgetState>) => void): Promise<void> {
+async function readIntoStore(set: SetState): Promise<void> {
   const storage = await getStorage();
-  set({ status: 'loading', error: null, fileName: storage.fileName });
+  session = null;
+  lockedEnvelope = null;
+  set({ status: 'loading', error: null, doc: null, encrypted: false, fileName: storage.fileName });
   try {
-    const raw = await storage.load();
-    const doc = raw === null ? createEmptyDoc() : migrate(raw);
-    set({
-      status: 'ready',
-      doc,
-      error: null,
-      lastSavedAt: null,
-      selectedYear: defaultYear(doc),
-    });
+    const text = await storage.readText();
+    const raw = text.trim() ? parseJson(text, storage.fileName) : null;
+    if (isEncryptedEnvelope(raw)) {
+      lockedEnvelope = raw;
+      set({ status: 'locked' });
+      return;
+    }
+    applyLoaded(set, raw, false);
   } catch (err) {
     set({ status: 'error', error: describe(err), doc: null });
+  }
+}
+
+/** Migrate and show a parsed budget; null means an empty file. Throws if it is not a budget. */
+function applyLoaded(set: SetState, raw: unknown, encrypted: boolean): void {
+  const doc = raw === null ? createEmptyDoc() : migrate(raw);
+  set({
+    status: 'ready',
+    doc,
+    error: null,
+    encrypted,
+    lastSavedAt: null,
+    selectedYear: defaultYear(doc),
+  });
+}
+
+function parseJson(text: string, fileName: string | null): unknown {
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error(
+      `"${fileName}" is not valid JSON and was not opened, so it has not been modified. ` +
+        `(${(err as Error).message})`,
+      { cause: err },
+    );
   }
 }

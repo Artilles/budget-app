@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { ACCOUNT_TYPES, MAX_BUDGET_NAME } from '../model/schema';
 import { useBudget } from '../store/useBudget';
+import { EMPTY_PASSPHRASE, passphraseProblem } from '../storage/encryption';
+import { PassphraseFields } from './PassphraseFields';
 
 type Draft = { name: string; type: string };
 
-const STEPS = ['Name', 'Accounts', 'Save'] as const;
+const STEPS = ['Name', 'Accounts', 'Protect', 'Save'] as const;
 
 /**
- * Setting up a new budget, in three steps.
+ * Setting up a new budget, in four steps.
  *
  * Everything is collected before anything is written: the save-location picker
  * is the last step, so dismissing it leaves the wizard open with the answers
@@ -21,9 +23,13 @@ export function NewBudgetWizard({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState('');
   const [accounts, setAccounts] = useState<Draft[]>([{ name: '', type: '' }]);
   const [busy, setBusy] = useState(false);
+  const [protect, setProtect] = useState(false);
+  const [passphrase, setPassphrase] = useState(EMPTY_PASSPHRASE);
 
   const named = name.trim();
   const filled = accounts.filter((a) => a.name.trim());
+  const protectBlocked = protect && passphraseProblem(passphrase) !== null;
+  const canAdvance = step === 0 ? Boolean(named) : step === 2 ? !protectBlocked : true;
 
   const setAccount = (index: number, patch: Partial<Draft>) =>
     setAccounts((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
@@ -37,10 +43,13 @@ export function NewBudgetWizard({ onClose }: { onClose: () => void }) {
     setBusy(true);
     // Stays open on a dismissed picker: the answers are still wanted, and
     // closing would throw away two steps of input over a mis-click.
-    const created = await createFromWizard({
-      name: named,
-      accounts: filled.map((a) => ({ name: a.name, type: a.type })),
-    });
+    const created = await createFromWizard(
+      {
+        name: named,
+        accounts: filled.map((a) => ({ name: a.name, type: a.type })),
+      },
+      protect ? passphrase.passphrase : undefined,
+    );
     setBusy(false);
     if (created) onClose();
   };
@@ -143,6 +152,34 @@ export function NewBudgetWizard({ onClose }: { onClose: () => void }) {
 
           {step === 2 && (
             <>
+              <label className="wizard-check">
+                <input
+                  type="checkbox"
+                  autoFocus
+                  checked={protect}
+                  onChange={(e) => setProtect(e.target.checked)}
+                />
+                <span>Protect this budget with a passphrase</span>
+              </label>
+              <p className="wizard-note">
+                The file is encrypted, so anyone who gets hold of it — on this computer, in a
+                backup, or in OneDrive — sees nothing readable. You will enter the passphrase each
+                time the app opens it, on any computer. You can also add this later from the
+                budget menu.
+              </p>
+              {protect && (
+                <PassphraseFields
+                  value={passphrase}
+                  onChange={setPassphrase}
+                  onSubmit={() => setStep(3)}
+                  autoFocus
+                />
+              )}
+            </>
+          )}
+
+          {step === 3 && (
+            <>
               <p className="wizard-question">Ready to create it.</p>
               <dl className="wizard-summary">
                 <dt>Name</dt>
@@ -153,6 +190,8 @@ export function NewBudgetWizard({ onClose }: { onClose: () => void }) {
                     ? filled.map((a) => a.name.trim()).join(', ')
                     : <em>none</em>}
                 </dd>
+                <dt>Protection</dt>
+                <dd>{protect ? 'Passphrase' : <em>none</em>}</dd>
               </dl>
               <p className="wizard-note">
                 Choosing a location creates the file. Put it somewhere backed up — a synced folder
@@ -174,7 +213,7 @@ export function NewBudgetWizard({ onClose }: { onClose: () => void }) {
             </button>
           )}
           {step < STEPS.length - 1 ? (
-            <button className="primary" disabled={step === 0 && !named} onClick={() => setStep(step + 1)}>
+            <button className="primary" disabled={!canAdvance} onClick={() => setStep(step + 1)}>
               Next
             </button>
           ) : (

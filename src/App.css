@@ -136,6 +136,31 @@
   white-space: nowrap;
 }
 
+/* Encryption state and the one action that goes with it, either way round. */
+.file-menu-protection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding-bottom: 0.35rem;
+  margin-bottom: 0.2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.protected-flag {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0.6rem;
+  padding: 0.3rem 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.file-menu-note.failed {
+  color: var(--danger);
+}
+
 .file-menu-panel button {
   text-align: left;
   border-color: transparent;
@@ -208,6 +233,16 @@ button.save-state.failed:hover {
   gap: 0.6rem;
   flex-wrap: wrap;
   margin-top: 1.4rem;
+}
+
+.gate-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.gate .wizard-field + .wizard-error {
+  margin-top: 0.5rem;
 }
 
 .gate.error {
@@ -1707,6 +1742,8 @@ kbd {
 .wizard-body {
   padding: 1.25rem;
   min-height: 13rem;
+  /* Scrolls rather than spilling over the footer in a short window. */
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -1745,6 +1782,35 @@ kbd {
   font-size: 0.78rem;
   line-height: 1.5;
   color: var(--text-dim);
+}
+
+.wizard-note.warn {
+  color: var(--warn);
+}
+
+.wizard-error {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--danger);
+}
+
+.wizard-field input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.wizard-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.wizard-check input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--accent);
 }
 
 .wizard-accounts {
