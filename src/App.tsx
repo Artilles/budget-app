@@ -54,8 +54,9 @@ export default function App() {
         <h1>Budget</h1>
         {status === 'ready' && <ViewTabs />}
         <div className="spacer" />
-        {status === 'ready' && <FileMenu onNewBudget={() => setCreating(true)} />}
+        {/* Save state sits inside the right-hand group, left of the name it belongs to. */}
         <SaveState />
+        {status === 'ready' && <FileMenu onNewBudget={() => setCreating(true)} />}
       </header>
       <main className="app-main">
         <Body status={status} error={error} onNewBudget={() => setCreating(true)} />
