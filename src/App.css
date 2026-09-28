@@ -21,6 +21,80 @@
   letter-spacing: -0.01em;
 }
 
+/* The app name, doubling as the app-settings menu trigger. */
+.app-menu {
+  position: relative;
+}
+
+.app-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font: inherit;
+  color: var(--text);
+  background: transparent;
+  border-color: transparent;
+  padding: 0.3rem 0.5rem;
+  margin-left: -0.5rem;
+}
+
+.app-chip:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+.app-chip .chevron {
+  font-size: 0.7em;
+  color: var(--text-dim);
+}
+
+.app-menu-label {
+  margin: 0.35rem 0.6rem 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/*
+ * Three mutually exclusive choices, so a segmented row rather than three menu
+ * items: which one is in force has to be readable at a glance.
+ */
+.theme-choice {
+  display: flex;
+  gap: 0.25rem;
+  margin: 0 0.6rem 0.1rem;
+}
+
+.app-menu-panel .theme-choice button {
+  flex: 1;
+  text-align: center;
+  padding: 0.35rem 0.4rem;
+  font-size: 0.85rem;
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+.app-menu-panel .theme-choice button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.app-menu-panel .theme-choice button.active:hover {
+  background: var(--accent);
+  filter: brightness(1.08);
+}
+
+.app-menu-note {
+  margin: 0.35rem 0.6rem 0.4rem;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
 .app-header .spacer {
   flex: 1;
 }
@@ -51,7 +125,8 @@
   font-size: 0.7em;
 }
 
-.file-menu-panel {
+.file-menu-panel,
+.app-menu-panel {
   position: absolute;
   top: calc(100% + 0.35rem);
   right: 0;
@@ -65,6 +140,13 @@
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+}
+
+/* Anchored under the app name at the left end of the header, not the right. */
+.app-menu-panel {
+  right: auto;
+  left: 0;
+  min-width: 15rem;
 }
 
 /*
@@ -161,7 +243,8 @@
   color: var(--danger);
 }
 
-.file-menu-panel button {
+.file-menu-panel button,
+.app-menu-panel button {
   text-align: left;
   border-color: transparent;
   background: transparent;
@@ -169,7 +252,8 @@
   padding: 0.45rem 0.6rem;
 }
 
-.file-menu-panel button:hover {
+.file-menu-panel button:hover,
+.app-menu-panel button:hover {
   background: var(--surface-2);
 }
 

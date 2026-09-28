@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useRef, useState } from 'react';
 import './App.css';
 import { useBudget } from './store/useBudget';
 import { MAX_BUDGET_NAME } from './model/schema';
+import { AppMenu } from './components/AppMenu';
 import { NewBudgetWizard } from './components/NewBudgetWizard';
 import { ProtectDialog } from './components/ProtectDialog';
 import { YearView } from './views/YearView';
@@ -51,7 +52,9 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Budget</h1>
+        {/* The app name is also the app-settings menu; the budget's own settings
+            live in the file menu on the right. */}
+        <AppMenu />
         {status === 'ready' && <ViewTabs />}
         <div className="spacer" />
         {/* Save state sits inside the right-hand group, left of the name it belongs to. */}

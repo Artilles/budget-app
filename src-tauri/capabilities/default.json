@@ -1,10 +1,11 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Only what the storage adapter needs: file pickers, and reading/writing files the user picked. No path scopes are granted here on purpose: picking a file is what grants access to it.",
+  "description": "Only what the app needs: file pickers, reading and writing files the user picked, and setting the window theme so the title bar follows the app's light/dark choice. No path scopes are granted here on purpose: picking a file is what grants access to it.",
   "windows": ["main"],
   "permissions": [
     "core:default",
+    "core:window:allow-set-theme",
     "dialog:allow-open",
     "dialog:allow-save",
     "fs:allow-exists",
